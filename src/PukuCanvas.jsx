@@ -5,105 +5,107 @@ import {
   Search, SlidersHorizontal, ChevronRight, ChevronDown, Check, HelpCircle,
   FileCode, Zap, AlertTriangle, Activity, Send, Paperclip, ExternalLink, X, Star,
   Copy, Maximize2, Monitor, Smartphone, Tablet, Undo, Redo, Eye, ShieldCheck,
-  Grid, Compass, Database, Radio, Globe, Server, Network, Wifi, ListFilter
+  Grid, Compass, Database, Radio, Globe, Server, Network, Wifi, ListFilter,
+  GripVertical, MoreVertical, Share2, CornerDownRight, Box, CpuIcon
 } from 'lucide-react';
 
-const blockLibrary = [
+const leftSidebarItems = {
+  Input: [
+    { id: 'in-1', name: 'BGP Flap Event', sub: 'telemetry.kyro.net v1.0.0', type: 'Input', inputs: [], outputs: ['BGP Event', 'Holdtime Log'] },
+    { id: 'in-2', name: 'Optical Rx Power Alert', sub: 'sfp.observium.net v1.0.0', type: 'Input', inputs: [], outputs: ['Rx Signal', 'Loss %'] },
+    { id: 'in-3', name: 'NetFlow Packet Stream', sub: 'kafka.flow.net v1.0.0', type: 'Input', inputs: [], outputs: ['IP Flow', 'Bandwidth'] }
+  ],
+  AI: [
+    { id: 'ai-1', name: 'Puku RCA Agent', sub: 'puku.ai.kyro v2.4.0', type: 'AI', inputs: ['Telemetry', 'Logs'], outputs: ['Root Cause', 'Confidence'] },
+    { id: 'ai-2', name: 'Intent Classifier', sub: 'nlu.watson.net v1.0.0', type: 'AI', inputs: ['Text'], outputs: ['Intent', 'Entities'] },
+    { id: 'ai-3', name: 'Anomaly Detector', sub: 'prometheus.metrics v1.2.0', type: 'AI', inputs: ['Metrics'], outputs: ['Anomaly Score'] }
+  ],
+  Output: [
+    { id: 'out-1', name: 'BGP Path Reroute', sub: 'cisco.router.net v1.0.0', type: 'Output', inputs: ['Trigger Action'], outputs: [] },
+    { id: 'out-2', name: 'NOC Ticket & Advisory', sub: 'servicenow.api v1.0.0', type: 'Output', inputs: ['Incident Summary'], outputs: [] },
+    { id: 'out-3', name: 'Slack / SMS Alert', sub: 'slack.chat.com v1.0.0', type: 'Output', inputs: ['Text Message'], outputs: [] }
+  ]
+};
+
+const initialStageNodes = [
   {
-    category: 'Triggers',
-    items: [
-      { id: 'trig-bgp', name: 'BGP Flap Trigger', icon: Radio, color: '#eaaa7f', desc: 'Fires when BGP peer holdtime expires or flaps.' },
-      { id: 'trig-opt', name: 'Optical Rx Power Drop', icon: Signal, color: '#eaaa7f', desc: 'Triggers on SFP optical power drop below -22 dBm.' },
-      { id: 'trig-cron', name: 'Scheduled Cron', icon: Clock, color: '#eaaa7f', desc: 'Recurring scheduled execution trigger.' }
-    ]
+    id: 'stage-1',
+    title: 'BGP Flap Event',
+    sub: 'telemetry.kyro.net v1.0.0',
+    type: 'Input',
+    status: 'Ready',
+    x: 60,
+    y: 120,
+    inputs: [],
+    outputs: ['BGP Event', 'Holdtime Log'],
+    accent: '#38BDF8'
   },
   {
-    category: 'AI Agents',
-    items: [
-      { id: 'ai-rca', name: 'Puku RCA Agent', icon: Sparkles, color: '#accb91', desc: 'Correlates Syslog, NetFlow & SNMP anomalies.' },
-      { id: 'ai-anomaly', name: 'Traffic Anomaly Classifier', icon: Activity, color: '#accb91', desc: 'Identifies DDoS & micro-burst spikes.' }
-    ]
+    id: 'stage-2',
+    title: 'Puku RCA Agent',
+    sub: 'puku.ai.kyro v2.4.0',
+    type: 'AI',
+    status: 'Ready',
+    x: 360,
+    y: 80,
+    inputs: ['Telemetry', 'Logs'],
+    outputs: ['Root Cause', 'Confidence Score'],
+    accent: '#A855F7'
   },
   {
-    category: 'Network Actions',
-    items: [
-      { id: 'act-bgp-shift', name: 'BGP Weight Shift', icon: Network, color: '#9badbd', desc: 'Diverts traffic to standby backup IIG link.' },
-      { id: 'act-mikrotik', name: 'MikroTik Reboot / Flush', icon: Server, color: '#9badbd', desc: 'Flushes connection tracking table on router.' },
-      { id: 'act-acl', name: 'ACL Firewall Rule Update', icon: ShieldCheck, color: '#9badbd', desc: 'Applies rate-limiting ACL on targeted IP.' }
-    ]
-  },
-  {
-    category: 'Logic & Control',
-    items: [
-      { id: 'log-if', name: 'Conditional Branch (If/Else)', icon: SlidersHorizontal, color: '#ada0c5', desc: 'Evaluates telemetry thresholds before execution.' },
-      { id: 'log-approval', name: 'Human Approval Guardrail', icon: ShieldAlert, color: '#ada0c5', desc: 'Pauses workflow until NOC engineer approves.' }
-    ]
+    id: 'stage-3',
+    title: 'BGP Path Reroute',
+    sub: 'cisco.router.net v1.0.0',
+    type: 'Output',
+    status: 'Ready',
+    x: 680,
+    y: 120,
+    inputs: ['Trigger Action'],
+    outputs: [],
+    accent: '#4ADE80'
   }
 ];
 
-const initialCanvasNodes = [
+const rightPaletteCategories = [
   {
-    id: 'node-1',
-    title: 'BGP Flap Trigger',
-    type: 'trigger',
+    category: 'Favourites',
+    items: [
+      { name: 'AI Keyword', desc: 'Keyword to start a workflow, use with or without argument.' },
+      { name: 'Script filter', desc: "Dynamically populate Alfred's results with your own scripts." },
+      { name: 'Run script', desc: 'Run commands in macOS/Linux using various languages & scripts.' }
+    ]
+  },
+  {
     category: 'Triggers',
-    x: 60,
-    y: 100,
-    status: 'Active',
-    device: 'dhaka-core-01.kyro.net',
-    params: { holdtime: '15s', peer: '103.14.22.1' },
-    accent: '#eaaa7f'
+    items: [
+      { name: 'Hotkey', desc: 'Trigger workflow via custom keyboard combination.' },
+      { name: 'Universal action', desc: 'Action trigger on selected text or URLs.' }
+    ]
   },
   {
-    id: 'node-2',
-    title: 'Puku RCA Agent',
-    type: 'ai',
-    category: 'AI Agents',
-    x: 340,
-    y: 100,
-    status: 'Running',
-    confidence: '94%',
-    params: { model: 'Puku-v2.4-NOC', telemetryWindow: '15m' },
-    accent: '#accb91'
-  },
-  {
-    id: 'node-3',
-    title: 'Human Approval Guardrail',
-    type: 'logic',
-    category: 'Logic & Control',
-    x: 620,
-    y: 100,
-    status: 'Waiting Approval',
-    params: { approver: 'Raihan Ahmed (NOC Lead)', timeout: '30m' },
-    accent: '#ada0c5'
-  },
-  {
-    id: 'node-4',
-    title: 'BGP Weight Shift',
-    type: 'action',
-    category: 'Network Actions',
-    x: 900,
-    y: 100,
-    status: 'Queued',
-    params: { targetLink: 'Gulshan Link-02', weight: '200' },
-    accent: '#9badbd'
+    category: 'Inputs',
+    items: [
+      { name: 'Keyword', desc: 'Keyword to start a workflow.' },
+      { name: 'File filter', desc: 'Customized file search scope or path.' },
+      { name: 'Running apps', desc: 'List currently active OS background processes.' }
+    ]
   }
 ];
 
 export default function PukuCanvas() {
-  const [nodes, setNodes] = useState(initialCanvasNodes);
-  const [selectedNode, setSelectedNode] = useState(initialCanvasNodes[1]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [viewport, setViewport] = useState('desktop'); // desktop | tablet | mobile
-  const [snapGrid, setSnapGrid] = useState(true);
-  const [zoom, setZoom] = useState(100);
-  const [terminalOpen, setTerminalOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState('AI'); // 'Input' | 'AI' | 'Output'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [stageNodes, setStageNodes] = useState(initialStageNodes);
+  const [selectedNode, setSelectedNode] = useState(initialStageNodes[1]);
+  const [terminalOpen, setTerminalOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [isDeploying, setIsDeploying] = useState(false);
 
   // Terminal state
   const [termLogs, setTermLogs] = useState([
-    'Webflow-style Kyro Workflow Canvas initialized.',
-    'Puku AI Connected: 356 Routers stream active.',
-    'Type "puku help" or "puku runbook execute" to simulate automated remediation.'
+    '[14:29:57.980] Debugger initialized - Conveyor AI Engine active',
+    '[14:29:58.102] Connected to Link3 Telemetry Pipeline (356 core routers)',
+    '[14:29:58.450] Type "puku help" or "puku analyze INC-9042" to execute CLI commands.'
   ]);
   const [termInput, setTermInput] = useState('');
 
@@ -123,52 +125,42 @@ export default function PukuCanvas() {
 
   const handleMouseMove = (e) => {
     if (!draggingNodeId) return;
-    const stage = document.getElementById('webflow-stage');
+    const stage = document.getElementById('conveyor-stage');
     if (!stage) return;
     const rect = stage.getBoundingClientRect();
-    let newX = e.clientX - rect.left - dragOffset.x;
-    let newY = e.clientY - rect.top - dragOffset.y;
+    const newX = Math.max(10, Math.min(rect.width - 250, e.clientX - rect.left - dragOffset.x));
+    const newY = Math.max(10, Math.min(rect.height - 220, e.clientY - rect.top - dragOffset.y));
 
-    if (snapGrid) {
-      newX = Math.round(newX / 20) * 20;
-      newY = Math.round(newY / 20) * 20;
-    }
-
-    setNodes(prev => prev.map(n => n.id === draggingNodeId ? { ...n, x: Math.max(10, newX), y: Math.max(10, newY) } : n));
+    setStageNodes(prev => prev.map(n => n.id === draggingNodeId ? { ...n, x: newX, y: newY } : n));
   };
 
   const handleMouseUp = () => {
     setDraggingNodeId(null);
   };
 
-  const addBlockToCanvas = (item) => {
+  const addSidebarItemToStage = (item) => {
     const newNode = {
-      id: `node-${nodes.length + 1}`,
+      id: `stage-${stageNodes.length + 1}`,
       title: item.name,
-      type: item.category.toLowerCase(),
-      category: item.category,
-      x: 100 + (nodes.length * 40) % 400,
-      y: 120 + (nodes.length * 30) % 200,
-      status: 'Configured',
-      params: { created: 'Just now', target: 'Auto-assigned' },
-      accent: item.color
+      sub: item.sub,
+      type: item.type,
+      status: 'Ready',
+      x: 120 + (stageNodes.length * 50) % 350,
+      y: 100 + (stageNodes.length * 40) % 250,
+      inputs: item.inputs || ['Input'],
+      outputs: item.outputs || ['Output'],
+      accent: item.type === 'Input' ? '#38BDF8' : item.type === 'AI' ? '#A855F7' : '#4ADE80'
     };
-    setNodes([...nodes, newNode]);
+    setStageNodes([...stageNodes, newNode]);
     setSelectedNode(newNode);
-  };
-
-  const deleteNode = (id) => {
-    setNodes(nodes.filter(n => n.id !== id));
-    if (selectedNode?.id === id) {
-      setSelectedNode(null);
-    }
   };
 
   const handleTermSubmit = (e) => {
     e.preventDefault();
     if (!termInput.trim()) return;
     const cmd = termInput.trim();
-    const newLogs = [...termLogs, `kyro-cli> ${cmd}`];
+    const timestamp = new Date().toLocaleTimeString();
+    const newLogs = [...termLogs, `[${timestamp}] kyro-cli> ${cmd}`];
 
     if (cmd === 'clear') {
       setTermLogs([]);
@@ -176,26 +168,43 @@ export default function PukuCanvas() {
       return;
     } else if (cmd === 'puku help' || cmd === 'help') {
       newLogs.push(
-        'Available Commands:',
-        '  puku runbook execute  - Simulate visual workflow execution',
-        '  puku nodes list       - List all active blocks on canvas stage',
-        '  puku status           - Query Puku AI engine connection',
-        '  clear                 - Clear output'
+        '[PUKU CLI] Available AI Commands:',
+        '  puku analyze <INC-ID>  - Run AI root cause analysis',
+        '  puku runbook execute  - Execute visual workflow canvas',
+        '  puku pipeline status  - Query Kafka telemetry stream health',
+        '  clear                 - Clear terminal output'
+      );
+    } else if (cmd.startsWith('puku analyze')) {
+      newLogs.push(
+        '[PUKU AI ANALYSIS] INC-9042 Spotlight:',
+        '  • Probable Root Cause (94% Conf): SFP Optical Rx Power drop (-28.4 dBm) on Ge0/0/1',
+        '  • Affected Impact: 12,846 subscribers, 14 enterprise SLA circuits',
+        '  • Recommended Action: Trigger BGP weight shift to backup link'
       );
     } else if (cmd === 'puku runbook execute' || cmd === 'run') {
       newLogs.push(
-        '[EXECUTOR] Initiating Webflow-style Workflow Runbook...',
-        '  [1] Trigger "BGP Flap Trigger" -> Event Fired',
-        '  [2] AI Agent "Puku RCA Agent" -> RCA Confidence 94%',
-        '  [3] Guardrail "Human Approval Guardrail" -> Paused (Awaiting Raihan Ahmed signature)',
-        '[PAUSED] Runbook execution awaiting human authorization.'
+        '[EXECUTOR] Running Conveyor AI Workflow...',
+        '  [+] Stage 1: BGP Flap Event -> Triggered',
+        '  [+] Stage 2: Puku RCA Agent -> Root Cause Identified (94% Conf)',
+        '  [+] Stage 3: BGP Path Reroute -> Executed Successfully',
+        '[SUCCESS] Conveyor AI Workflow execution finished in 1.4s'
       );
     } else {
-      newLogs.push(`Executing command: "${cmd}". Type "puku help" for available commands.`);
+      newLogs.push(`Executed command: "${cmd}". Type "puku help" for available commands.`);
     }
 
     setTermLogs(newLogs);
     setTermInput('');
+  };
+
+  const triggerDeploy = () => {
+    setIsDeploying(true);
+    const timestamp = new Date().toLocaleTimeString();
+    setTermLogs(prev => [...prev, `[${timestamp}] [DEPLOYMENT] Deploying Conveyor AI Workflow to Link3 NOC Cluster...`]);
+    setTimeout(() => {
+      setIsDeploying(false);
+      setTermLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] [DEPLOYMENT SUCCESS] Workflow deployed & active.`]);
+    }, 1400);
   };
 
   return (
@@ -204,157 +213,254 @@ export default function PukuCanvas() {
       onMouseUp={handleMouseUp}
       style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
     >
-      {/* Standard Kyro Page Heading */}
-      <div className="page-heading" style={{ marginBottom: '10px' }}>
-        <div>
-          <div className="eyebrow">VISUAL WORKFLOW & AUTOMATION BUILDER</div>
-          <h1>Puku AI Workflow Canvas<span className="title-dot">.</span></h1>
-          <p>Drag-and-drop network automation, AI runbook orchestration, and live CLI execution engine.</p>
+      {/* Conveyor AI Top Navigation Bar */}
+      <div style={{
+        display: 'flex',
+        justify: 'space-between',
+        alignItems: 'center',
+        background: '#16181A',
+        border: '1px solid #2B2E31',
+        borderRadius: '10px',
+        padding: '12px 20px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '13px', color: '#84898E', fontWeight: 550 }}>Projects</span>
+          <span style={{ color: '#4B4F53' }}>/</span>
+          <span style={{ fontSize: '13px', color: '#84898E', fontWeight: 550 }}>Slack Bots</span>
+          <span style={{ color: '#4B4F53' }}>/</span>
+          <span style={{ fontSize: '14px', color: '#F8FAFC', fontWeight: 700 }}>Developer Bot</span>
+          <span className="badge neutral" style={{ fontSize: '9px' }}>Not deployed</span>
         </div>
-        <div className="heading-actions">
-          <button onClick={() => setTermLogs(prev => [...prev, '[SIMULATOR] Visual runbook test run initiated.'])}>
-            <Zap size={14} /> Test Runbook ⚡
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button style={{ fontSize: '11px', padding: '7px 12px' }}>Save draft 💾</button>
+          <button style={{ fontSize: '11px', padding: '7px 12px' }}>Manage tokens 🛡️</button>
+          <button
+            className="primary"
+            onClick={triggerDeploy}
+            disabled={isDeploying}
+            style={{
+              background: 'linear-gradient(135deg, #7C3AED 0%, #6366F1 100%)',
+              borderColor: '#7C3AED',
+              color: '#FFF',
+              fontWeight: 700,
+              fontSize: '11px',
+              padding: '7px 16px'
+            }}
+          >
+            {isDeploying ? <RefreshCw className="animate-spin" size={13} /> : <Zap size={13} />}
+            {isDeploying ? 'Deploying...' : 'Deploy 🚀'}
           </button>
-          <button className="primary" onClick={() => setTermLogs(prev => [...prev, '[DEPLOYER] Workflow published to Link3 NOC cluster.'])}>
-            <Check size={14} /> Publish Workflow
+          <button
+            onClick={() => setTerminalOpen(!terminalOpen)}
+            style={{
+              padding: '7px 12px',
+              background: terminalOpen ? 'rgba(168, 85, 247, 0.2)' : '#202325',
+              borderColor: terminalOpen ? '#A855F7' : '#393C3E',
+              color: terminalOpen ? '#C084FC' : '#D8DBDE',
+              fontSize: '11px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Toggle Interactive Puku Terminal"
+          >
+            <Terminal size={14} /> Terminal
           </button>
         </div>
       </div>
 
-      {/* Webflow / WordPress Style Top Control Toolbar Bar */}
-      <div className="card" style={{ padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1c1f21', borderRadius: '10px' }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: '#e6e7e7' }}>Viewport:</span>
-          <div style={{ display: 'flex', gap: '4px', background: '#111314', padding: '3px', borderRadius: '6px' }}>
-            <button
-              onClick={() => setViewport('desktop')}
-              style={{ padding: '4px 8px', border: 'none', background: viewport === 'desktop' ? '#332a24' : 'transparent', color: viewport === 'desktop' ? '#f2b287' : '#84898e', fontSize: '10px', borderRadius: '4px' }}
-            >
-              <Monitor size={13} /> Desktop
-            </button>
-            <button
-              onClick={() => setViewport('tablet')}
-              style={{ padding: '4px 8px', border: 'none', background: viewport === 'tablet' ? '#332a24' : 'transparent', color: viewport === 'tablet' ? '#f2b287' : '#84898e', fontSize: '10px', borderRadius: '4px' }}
-            >
-              <Tablet size={13} /> Tablet
-            </button>
-          </div>
-
-          <span className="header-separator" style={{ height: '16px' }} />
-
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '10px', color: '#84898e' }}>
-            <button onClick={() => setZoom(Math.max(60, zoom - 10))} style={{ padding: '3px 7px', fontSize: '10px' }}>-</button>
-            <span>{zoom}%</span>
-            <button onClick={() => setZoom(Math.min(140, zoom + 10))} style={{ padding: '3px 7px', fontSize: '10px' }}>+</button>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <label style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '10px', color: '#84898e', cursor: 'pointer' }}>
-            <input type="checkbox" checked={snapGrid} onChange={e => setSnapGrid(e.target.checked)} />
-            Snap to Grid (20px)
-          </label>
-          <span className="badge green">Live Telemetry Linked</span>
-        </div>
-      </div>
-
-      {/* Main Webflow 3-Column Layout: Left Palette + Center Stage Canvas + Right Inspector */}
-      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 280px', gap: '16px', alignItems: 'start' }}>
+      {/* Conveyor AI Main Workspace: Left Sidebar + Center Stage */}
+      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '16px', alignItems: 'start' }}>
         
-        {/* Left Column: Webflow / WordPress Block Library Drawer */}
-        <section className="card" style={{ height: '560px', display: 'flex', flexDirection: 'column' }}>
-          <div className="card-heading" style={{ borderBottom: '1px solid #2b2e30', paddingBottom: '10px' }}>
-            <h2><Layers size={15} />Elements & Blocks</h2>
+        {/* Left Column: Conveyor AI Accordion Sidebar (Input / AI / Output) */}
+        <section className="card" style={{ height: '620px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '14px 16px 10px 16px', borderBottom: '1px solid #2B2E31' }}>
+            <div className="eyebrow" style={{ marginBottom: '10px' }}>AGENTS & COMPONENTS</div>
+            {/* Category Tabs: Input | AI | Output */}
+            <div style={{ display: 'flex', background: '#111314', padding: '3px', borderRadius: '7px', border: '1px solid #303335' }}>
+              {['Input', 'AI', 'Output'].map(t => (
+                <button
+                  key={t}
+                  onClick={() => setActiveTab(t)}
+                  style={{
+                    flex: 1,
+                    padding: '5px',
+                    borderRadius: '5px',
+                    border: 'none',
+                    background: activeTab === t ? '#332A24' : 'transparent',
+                    color: activeTab === t ? '#F2B287' : '#84898E',
+                    fontWeight: 700,
+                    fontSize: '10px'
+                  }}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div style={{ padding: '12px 16px 8px 16px' }}>
+          {/* Search Box */}
+          <div style={{ padding: '10px 16px' }}>
             <div className="search-field" style={{ minWidth: 'auto', background: '#111314', padding: '6px 10px', borderRadius: '6px' }}>
-              <Search size={14} />
+              <Search size={13} />
               <input
-                placeholder="Search blocks..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Search by name..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
                 style={{ fontSize: '10px' }}
               />
             </div>
           </div>
 
-          <div style={{ flex: 1, padding: '0 16px 16px 16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {blockLibrary.map(section => (
-              <div key={section.category}>
-                <div className="eyebrow" style={{ marginBottom: '8px', color: '#84898e' }}>{section.category}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {section.items
-                    .filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                    .map(item => {
-                      const IconComp = item.icon;
-                      return (
-                        <div
-                          key={item.id}
-                          onClick={() => addBlockToCanvas(item)}
-                          style={{
-                            padding: '10px 12px',
-                            background: '#202325',
-                            border: '1px solid #35393b',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: '10px'
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.borderColor = '#eaaa7f'}
-                          onMouseLeave={e => e.currentTarget.style.borderColor = '#35393b'}
-                        >
-                          <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: `${item.color}22`, display: 'grid', placeItems: 'center', color: item.color, flexShrink: 0 }}>
-                            <IconComp size={14} />
-                          </div>
-                          <div>
-                            <strong style={{ fontSize: '11px', color: '#e6e7e7', display: 'block' }}>{item.name}</strong>
-                            <span style={{ fontSize: '9px', color: '#84898e', lineHeight: '1.3', display: 'block', marginTop: '2px' }}>{item.desc}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
+          {/* Draggable Component List Cards with 6-dot handle */}
+          <div style={{ flex: 1, padding: '0 16px 16px 16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {(leftSidebarItems[activeTab] || [])
+              .filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
+              .map(item => (
+                <div
+                  key={item.id}
+                  onClick={() => addSidebarItemToStage(item)}
+                  style={{
+                    padding: '10px 12px',
+                    background: '#202325',
+                    border: '1px solid #35393B',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justify: 'space-between',
+                    alignItems: 'center',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = '#EAAA7F'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = '#35393B'}
+                >
+                  <div>
+                    <strong style={{ fontSize: '11px', color: '#E6E7E7', display: 'block' }}>{item.name}</strong>
+                    <span style={{ fontSize: '9px', color: '#84898E', display: 'block', marginTop: '2px' }}>{item.sub}</span>
+                  </div>
+                  <GripVertical size={14} color="#64748B" />
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         </section>
 
-        {/* Center Column: Interactive Drag & Drop Stage Canvas */}
+        {/* Center Column: Conveyor AI Stage Canvas */}
         <section
-          id="webflow-stage"
+          id="conveyor-stage"
           className="card"
           style={{
-            height: '560px',
+            height: '620px',
             position: 'relative',
-            background: '#151719',
-            backgroundImage: snapGrid ? 'radial-gradient(#393e42 1px, transparent 1px)' : 'none',
-            backgroundSize: '20px 20px',
+            background: '#141618',
+            backgroundImage: 'radial-gradient(rgba(255, 255, 255, 0.08) 1.2px, transparent 1.2px)',
+            backgroundSize: '24px 24px',
             overflow: 'hidden'
           }}
         >
-          {/* Stage Bezier Connecting Cables SVG */}
+          {/* Top Stage Bar: OpenAI Helper Title Bar */}
+          <div style={{
+            padding: '12px 16px',
+            borderBottom: '1px solid #2B2E31',
+            background: 'rgba(20, 22, 24, 0.9)',
+            display: 'flex',
+            justify: 'space-between',
+            alignItems: 'center',
+            zIndex: 10,
+            position: 'relative'
+          }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: '#F8FAFC' }}>OpenAI helper</span>
+                <span className="badge orange" style={{ fontSize: '8px' }}>Configure workflow</span>
+              </div>
+              <p style={{ fontSize: '10px', color: '#84898E', margin: '2px 0 0 0' }}>Uses OpenAI to get do multiple things — v1.0.4</p>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button onClick={() => setPaletteOpen(!paletteOpen)} style={{ padding: '5px 10px', fontSize: '10px' }}>
+                <Plus size={13} /> Add Palette
+              </button>
+              <button style={{ padding: '5px 8px', fontSize: '10px' }}>{`{x}`}</button>
+              <button style={{ padding: '5px 8px', fontSize: '10px' }}>📤</button>
+            </div>
+          </div>
+
+          {/* Floating Zoom & Lock Controls on Bottom Left */}
+          <div style={{
+            position: 'absolute',
+            bottom: '20px',
+            left: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+            background: '#202325',
+            border: '1px solid #35393B',
+            borderRadius: '6px',
+            padding: '4px',
+            zIndex: 20
+          }}>
+            <button style={{ padding: '4px', border: 'none', background: 'transparent', color: '#D8DBDE' }}><Plus size={14} /></button>
+            <button style={{ padding: '4px', border: 'none', background: 'transparent', color: '#D8DBDE' }}>-</button>
+            <button style={{ padding: '4px', border: 'none', background: 'transparent', color: '#D8DBDE' }}><Maximize2 size={12} /></button>
+            <button style={{ padding: '4px', border: 'none', background: 'transparent', color: '#D8DBDE' }}><Lock size={12} /></button>
+          </div>
+
+          {/* Floating Right Palette Popover (OpenAI Helper Style) */}
+          {paletteOpen && (
+            <div style={{
+              position: 'absolute',
+              top: '60px',
+              right: '20px',
+              width: '260px',
+              background: '#202628',
+              border: '1px solid #4B5559',
+              borderRadius: '10px',
+              boxShadow: '0 16px 40px #0009',
+              zIndex: 30,
+              padding: '12px'
+            }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: '#F8FAFC', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Object Palette</span>
+                <button className="text-button" onClick={() => setPaletteOpen(false)}>✕</button>
+              </div>
+              {rightPaletteCategories.map(sec => (
+                <div key={sec.category} style={{ marginBottom: '10px' }}>
+                  <div className="eyebrow" style={{ marginBottom: '4px', fontSize: '8px' }}>v {sec.category}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {sec.items.map(item => (
+                      <div key={item.name} style={{ padding: '6px 8px', background: '#151719', borderRadius: '5px', fontSize: '10px' }}>
+                        <strong style={{ color: '#E6E7E7', display: 'block' }}>{item.name}</strong>
+                        <span style={{ color: '#84898E', fontSize: '8px' }}>{item.desc}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Dotted SVG Connecting Cables */}
           <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1 }}>
-            {nodes.slice(0, -1).map((node, idx) => {
-              const nextNode = nodes[idx + 1];
-              if (!nextNode) return null;
-              return (
-                <path
-                  key={node.id}
-                  d={`M ${node.x + 210} ${node.y + 40} C ${node.x + 260} ${node.y + 40}, ${nextNode.x - 40} ${nextNode.y + 40}, ${nextNode.x} ${nextNode.y + 40}`}
-                  fill="none"
-                  stroke={node.accent || '#eaaa7f'}
-                  strokeWidth="2.5"
-                  strokeDasharray="4 2"
-                />
-              );
-            })}
+            <path
+              d={`M ${stageNodes[0].x + 230} ${stageNodes[0].y + 60} C ${stageNodes[0].x + 280} ${stageNodes[0].y + 60}, ${stageNodes[1].x - 50} ${stageNodes[1].y + 60}, ${stageNodes[1].x} ${stageNodes[1].y + 60}`}
+              fill="none"
+              stroke="#A855F7"
+              strokeWidth="2.5"
+              strokeDasharray="4 2"
+            />
+            <path
+              d={`M ${stageNodes[1].x + 230} ${stageNodes[1].y + 60} C ${stageNodes[1].x + 280} ${stageNodes[1].y + 60}, ${stageNodes[2].x - 50} ${stageNodes[2].y + 60}, ${stageNodes[2].x} ${stageNodes[2].y + 60}`}
+              fill="none"
+              stroke="#4ADE80"
+              strokeWidth="2.5"
+              strokeDasharray="4 2"
+            />
           </svg>
 
-          {/* Render Drag & Drop Nodes */}
-          {nodes.map(node => {
+          {/* Conveyor AI Node Cards */}
+          {stageNodes.map(node => {
             const isSelected = selectedNode?.id === node.id;
             return (
               <div
@@ -364,151 +470,82 @@ export default function PukuCanvas() {
                   position: 'absolute',
                   left: `${node.x}px`,
                   top: `${node.y}px`,
-                  width: '210px',
-                  background: isSelected ? '#292f33' : '#202325',
+                  width: '230px',
+                  background: isSelected ? '#292F33' : '#1C2023',
                   borderRadius: '10px',
-                  border: '1px solid ' + (isSelected ? node.accent : '#35393b'),
-                  boxShadow: isSelected ? `0 0 20px ${node.accent}44` : '0 6px 18px #0008',
+                  border: '1px solid ' + (isSelected ? '#A855F7' : '#35393B'),
+                  boxShadow: isSelected ? '0 0 24px rgba(168, 85, 247, 0.4)' : '0 8px 24px #0008',
                   zIndex: isSelected ? 15 : 5,
                   cursor: 'grab',
                   userSelect: 'none',
                   padding: '12px'
                 }}
               >
+                {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '9px', fontWeight: 650, textTransform: 'uppercase', color: node.accent, background: `${node.accent}22`, padding: '2px 6px', borderRadius: '4px' }}>
-                    {node.category || node.type}
-                  </span>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); deleteNode(node.id); }}
-                    style={{ padding: '2px 4px', border: 'none', background: 'transparent', color: '#84898e', cursor: 'pointer' }}
-                  >
-                    ✕
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4ADE80' }} />
+                    <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', color: node.accent }}>{node.type}</span>
+                  </div>
+                  <MoreVertical size={13} color="#84898E" />
                 </div>
 
-                <strong style={{ fontSize: '11px', color: '#e6e7e7', display: 'block', marginBottom: '6px' }}>
-                  {node.title}
-                </strong>
+                {/* Node Title */}
+                <strong style={{ fontSize: '12px', color: '#F8FAFC', display: 'block', marginBottom: '2px' }}>{node.title}</strong>
+                <span style={{ fontSize: '9px', color: '#84898E', display: 'block', marginBottom: '10px' }}>{node.sub}</span>
 
-                {node.device && (
-                  <div style={{ fontSize: '9px', color: '#84898e', background: '#111314', padding: '4px 6px', borderRadius: '4px', marginBottom: '6px' }}>
-                    Device: {node.device}
+                {/* Inputs & Outputs Handles (Conveyor AI Style) */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: '#94A3B8', borderTop: '1px solid #2D3235', paddingTop: '8px' }}>
+                  <div>
+                    {node.inputs.map((inp, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#A855F7', display: 'inline-block' }} />
+                        <span>{inp}</span>
+                      </div>
+                    ))}
                   </div>
-                )}
 
-                {node.confidence && (
-                  <div style={{ fontSize: '9px', color: '#accb91', background: '#111314', padding: '4px 6px', borderRadius: '4px', fontWeight: 600 }}>
-                    RCA Confidence: {node.confidence}
+                  <div style={{ textAlign: 'right' }}>
+                    {node.outputs.map((out, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', marginBottom: '2px' }}>
+                        <span>{out}</span>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4ADE80', display: 'inline-block' }} />
+                      </div>
+                    ))}
                   </div>
-                )}
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #303335' }}>
-                  <span className={`badge ${node.status === 'Running' ? 'orange' : node.status === 'Active' ? 'green' : 'neutral'}`} style={{ fontSize: '8px' }}>
-                    {node.status}
-                  </span>
-                  <span style={{ fontSize: '8px', color: '#737b82' }}>Drag to move</span>
                 </div>
               </div>
             );
           })}
         </section>
-
-        {/* Right Column: Webflow Inspector Settings Panel */}
-        <section className="card" style={{ height: '560px', display: 'flex', flexDirection: 'column' }}>
-          <div className="card-heading" style={{ borderBottom: '1px solid #2b2e30', paddingBottom: '10px' }}>
-            <h2><SlidersHorizontal size={15} />Element Inspector</h2>
-          </div>
-
-          {selectedNode ? (
-            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, overflowY: 'auto' }}>
-              <div>
-                <label style={{ fontSize: '10px', color: '#84898e', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Block Label</label>
-                <input
-                  type="text"
-                  value={selectedNode.title}
-                  onChange={e => {
-                    const title = e.target.value;
-                    setSelectedNode({ ...selectedNode, title });
-                    setNodes(nodes.map(n => n.id === selectedNode.id ? { ...n, title } : n));
-                  }}
-                  style={{ width: '100%', fontSize: '11px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '10px', color: '#84898e', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Execution State</label>
-                <select
-                  value={selectedNode.status}
-                  onChange={e => {
-                    const status = e.target.value;
-                    setSelectedNode({ ...selectedNode, status });
-                    setNodes(nodes.map(n => n.id === selectedNode.id ? { ...n, status } : n));
-                  }}
-                  style={{ width: '100%', fontSize: '10px' }}
-                >
-                  {['Active', 'Running', 'Waiting Approval', 'Queued', 'Configured'].map(s => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '10px', color: '#84898e', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Parameters & Config</label>
-                <div style={{ background: '#111314', border: '1px solid #303335', borderRadius: '7px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '10px' }}>
-                  {Object.entries(selectedNode.params || {}).map(([k, v]) => (
-                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span className="muted">{k}:</span>
-                      <strong style={{ color: '#d0d6da' }}>{v}</strong>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid #2b2e30' }}>
-                <button
-                  onClick={() => deleteNode(selectedNode.id)}
-                  style={{ width: '100%', background: '#3c2929', borderColor: '#5c3636', color: '#d59994', fontSize: '10px' }}
-                >
-                  <Trash2 size={13} /> Delete Element
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="empty" style={{ padding: '40px 20px' }}>
-              <Compass size={24} />
-              <h3 style={{ fontSize: '12px' }}>No Element Selected</h3>
-              <p style={{ fontSize: '10px' }}>Click any node block on the visual stage to inspect properties.</p>
-            </div>
-          )}
-        </section>
       </div>
 
-      {/* Bottom Docked Terminal Bar matching Kyro styling */}
+      {/* Togglable Terminal & Debugger Bar (Opens when Terminal Icon is Clicked) */}
       {terminalOpen && (
         <section className="card" style={{ background: '#151719' }}>
-          <div className="card-heading" style={{ borderBottom: '1px solid #2b2e30', paddingBottom: '10px' }}>
-            <h2><Terminal size={15} />Interactive Execution Terminal (Puku CLI)</h2>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <span className="badge green">Puku AI Connected</span>
-              <button className="text-button" onClick={() => setTerminalOpen(false)}>Hide</button>
+          <div className="card-heading" style={{ borderBottom: '1px solid #2B2E31', paddingBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Terminal size={15} color="#A855F7" />
+              <h2>Debugger & Interactive Puku CLI Terminal</h2>
+              <span className="badge green" style={{ fontSize: '8px' }}>Puku AI Connected</span>
             </div>
+            <button className="text-button" onClick={() => setTerminalOpen(false)}>Close Terminal ✕</button>
           </div>
 
           <div style={{ padding: '14px 21px', fontFamily: 'monospace', fontSize: '11px' }}>
-            <div style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '10px' }}>
+            <div style={{ maxHeight: '110px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '10px' }}>
               {termLogs.map((l, i) => (
-                <div key={i} style={{ color: l.startsWith('kyro-cli>') ? '#efa476' : l.includes('EXECUTOR') ? '#accb91' : '#d0d6da' }}>{l}</div>
+                <div key={i} style={{ color: l.includes('kyro-cli>') ? '#EAAA7F' : l.includes('SUCCESS') ? '#ACCB91' : '#D0D6DA' }}>{l}</div>
               ))}
             </div>
 
             <form onSubmit={handleTermSubmit} style={{ display: 'flex', gap: '8px' }}>
-              <span style={{ color: '#accb91', fontWeight: 600 }}>kyro-cli&gt;</span>
+              <span style={{ color: '#ACCB91', fontWeight: 600 }}>kyro-cli&gt;</span>
               <input
                 type="text"
                 value={termInput}
                 onChange={e => setTermInput(e.target.value)}
-                placeholder="Type CLI command (e.g. puku runbook execute, puku help, clear)..."
+                placeholder="Type CLI command (e.g. puku analyze INC-9042, puku runbook execute, help, clear)..."
                 style={{ flex: 1, padding: '6px 10px', fontSize: '11px', fontFamily: 'monospace' }}
               />
               <button className="primary" style={{ padding: '6px 14px' }}>Execute</button>
