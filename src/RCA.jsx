@@ -72,15 +72,6 @@ const mockIncidents = [
   }
 ];
 
-const mockIntegrations = [
-  { name: 'Kafka Stream', status: 'Connected', rate: '42.8k events/sec', delay: '2ms' },
-  { name: 'Loki Syslog Engine', status: 'Connected', rate: '14.2k logs/sec', delay: '12ms' },
-  { name: 'MinIO Parquet Storage', status: 'Connected', rate: 'NetFlow Archiving', delay: 'Active' },
-  { name: 'Prometheus Metrics', status: 'Connected', rate: '356 Routers Polled', delay: '5s interval' },
-  { name: 'Observium SNMP', status: 'Connected', rate: 'SNMP Traps Active', delay: 'Real-time' },
-  { name: 'MikroTik & OLT API', status: 'Connected', rate: 'RADIUS & BNG Sync', delay: 'Active' }
-];
-
 export default function RCA() {
   const [selectedIncident, setSelectedIncident] = useState(mockIncidents[0]);
   const [activeTab, setActiveTab] = useState('rca');
@@ -88,13 +79,13 @@ export default function RCA() {
   const [cliOpen, setCliOpen] = useState(true);
   const [cliOutput, setCliOutput] = useState([
     'Kyro Operator CLI v2.4.0 [Puku AI Connected]',
-    'Data Pipeline: NetFlow + Syslog + DNS + SNMP -> Kafka -> Loki/MinIO -> Prometheus',
+    'Pipeline: NetFlow + Syslog + DNS + SNMP -> Kafka -> Loki/MinIO -> Prometheus',
     'Type "puku help" or "puku analyze INC-9042" to run AI diagnostics.'
   ]);
   const [cliInput, setCliInput] = useState('');
   const [runbookState, setRunbookState] = useState('Not Started');
   const [chatMessages, setChatMessages] = useState([
-    { sender: 'puku', text: 'Hello NOC Engineer! I am Puku AI. I have correlated 1,024 raw alerts into 1 logical incident (INC-9042). Probable Cause: Optical Transceiver Degradation (-28.4 dBm) on dhaka-core-01. Would you like to execute the automated optical failover runbook?' }
+    { sender: 'puku', text: 'Hello NOC Engineer! I am Puku AI. I have correlated 1,024 raw alerts into 1 logical incident (INC-9042). Probable Cause: Optical Transceiver Degradation (-28.4 dBm) on dhaka-core-01. Would you like to execute the optical failover runbook?' }
   ]);
   const [chatInput, setChatInput] = useState('');
 
@@ -106,12 +97,11 @@ export default function RCA() {
 
     if (cmd === 'puku help' || cmd === 'help') {
       newOutput.push(
-        'Available CLI & Puku Commands:',
-        '  puku analyze <INC-ID>  - Run deep AI root cause hypothesis evaluation',
-        '  puku impact           - Query affected residential and enterprise SLA circuits',
-        '  puku pipeline status  - Check Kafka, Loki, MinIO, Prometheus stream health',
-        '  puku execute          - Execute active remediation runbook',
-        '  clear                 - Clear terminal output'
+        'Available Commands:',
+        '  puku analyze <INC-ID>  - Run AI root cause analysis',
+        '  puku impact           - Query affected residential and SLA circuits',
+        '  puku pipeline status  - Check Kafka, Loki, MinIO, Prometheus status',
+        '  clear                 - Clear output'
       );
     } else if (cmd === 'clear') {
       setCliOutput([]);
@@ -123,19 +113,10 @@ export default function RCA() {
         `    Target Device: ${selectedIncident.device}`,
         `    Probable Cause: ${selectedIncident.probableCause}`,
         `    RCA Confidence: ${selectedIncident.confidence}%`,
-        `    Telemetry Evidence: Optical Rx Power -28.4 dBm (Threshold: -22.0 dBm)`,
-        `    Correlation Reduction: 1,024 raw alerts -> 120 signals -> 15 events -> 1 incident`
-      );
-    } else if (cmd === 'puku pipeline status') {
-      newOutput.push(
-        '[DATA PIPELINE STATUS]',
-        '  Kafka Streaming: 42.8k events/sec [OK]',
-        '  Loki Syslog: 14.2k logs/sec [OK]',
-        '  MinIO Storage: NetFlow Parquet Archiving [OK]',
-        '  Observium SNMP: 356 Routers Online [OK]'
+        `    Telemetry Evidence: Optical Rx Power -28.4 dBm (Threshold: -22.0 dBm)`
       );
     } else {
-      newOutput.push(`Executing command: "${cmd}". Type "puku help" for AI diagnostic command list.`);
+      newOutput.push(`Executing command: "${cmd}". Type "puku help" for available commands.`);
     }
 
     setCliOutput(newOutput);
@@ -150,274 +131,288 @@ export default function RCA() {
     setChatInput('');
 
     setTimeout(() => {
-      let botReply = "Puku AI analyzed your operational prompt against Kafka streams and topology. ";
+      let botReply = "Puku AI analyzed your prompt: ";
       if (userMsg.toLowerCase().includes('why') || userMsg.toLowerCase().includes('cause')) {
-        botReply += `The root cause for ${selectedIncident.id} is optical signal degradation on interface Ge0/0/1 (-28.4 dBm Rx power), triggering BGP holdtimer expiry.`;
-      } else if (userMsg.toLowerCase().includes('impact') || userMsg.toLowerCase().includes('who')) {
-        botReply += `Customer Impact: ${selectedIncident.impactedSubs.toLocaleString()} residential users and ${selectedIncident.impactedSla} enterprise SLA circuits in Gulshan/Banani.`;
+        botReply += `Root cause for ${selectedIncident.id} is optical degradation (-28.4 dBm) on Ge0/0/1.`;
       } else {
-        botReply += `Operational recommendation: Approve runbook ${selectedIncident.recommendedRunbook} to trigger BGP weight shift to standby optical link.`;
+        botReply += `Operational recommendation: Execute ${selectedIncident.recommendedRunbook} to restore normal throughput.`;
       }
       setChatMessages(prev => [...prev, { sender: 'puku', text: botReply }]);
     }, 600);
   };
 
-  return (
-    <div style={{ padding: '24px', background: '#0B0E14', color: '#E2E8F0', minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
-      {/* Platform Core Loop Header */}
-      <div style={{ marginBottom: '20px', background: '#111622', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '14px 20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <div>
-            <span style={{ fontSize: '11px', color: '#818CF8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Operational Loop Workflow
-            </span>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: '#F8FAFC', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-              <span>OBSERVE</span> <ChevronRight size={12} color="#64748B" />
-              <span>CORRELATE</span> <ChevronRight size={12} color="#64748B" />
-              <span>INVESTIGATE</span> <ChevronRight size={12} color="#64748B" />
-              <span>EXPLAIN</span> <ChevronRight size={12} color="#64748B" />
-              <span style={{ color: '#38BDF8', fontWeight: 800 }}>ROOT CAUSE</span> <ChevronRight size={12} color="#64748B" />
-              <span style={{ color: '#F59E0B' }}>CUSTOMER IMPACT</span> <ChevronRight size={12} color="#64748B" />
-              <span style={{ color: '#4ADE80' }}>TAKE ACTION</span> <ChevronRight size={12} color="#64748B" />
-              <span>VERIFY</span>
-            </div>
-          </div>
+  const executeRunbook = () => {
+    setRunbookState('Running');
+    setTimeout(() => setRunbookState('Waiting for Approval'), 1200);
+  };
 
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <span style={{ padding: '4px 10px', borderRadius: '20px', background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#4ADE80', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Database size={13} /> Kafka Pipeline: 42.8k events/s
-            </span>
-            <button
-              onClick={() => setCopilotOpen(!copilotOpen)}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '8px',
-                background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
-                border: 'none',
-                color: '#FFF',
-                fontWeight: 700,
-                fontSize: '12px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <Sparkles size={14} /> Puku AI Copilot
-            </button>
-          </div>
+  const approveRunbook = () => {
+    setRunbookState('Completed');
+  };
+
+  return (
+    <div>
+      {/* Standard Kyro Page Heading */}
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">INTELLIGENCE & INCIDENT CORRELATION</div>
+          <h1>RCA & Incident Intelligence<span className="title-dot">.</span></h1>
+          <p>AI-native root cause analysis, telemetry correlation, and subscriber impact engine.</p>
+        </div>
+        <div className="heading-actions">
+          <button onClick={() => setCliOpen(!cliOpen)}>
+            <Terminal size={15} /> CLI {cliOpen ? '(Active)' : ''}
+          </button>
+          <button className="primary" onClick={() => setCopilotOpen(!copilotOpen)}>
+            <Sparkles size={15} /> Puku Copilot
+          </button>
         </div>
       </div>
 
-      {/* Main RCA Workbench Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: copilotOpen ? '320px 1fr 320px' : '340px 1fr', gap: '20px', alignItems: 'start' }}>
-        {/* Left: Intelligent Incident Correlation Queue */}
-        <div style={{ background: '#111622', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, margin: 0, color: '#F8FAFC', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Layers size={16} color="#818CF8" /> Correlated Incidents
-            </h3>
-            <span style={{ fontSize: '11px', color: '#94A3B8', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '10px' }}>
-              1,024 Alerts → 1 Incident
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {mockIncidents.map(inc => {
-              const isSelected = selectedIncident.id === inc.id;
-              return (
-                <div
-                  key={inc.id}
-                  onClick={() => setSelectedIncident(inc)}
-                  style={{
-                    padding: '14px',
-                    borderRadius: '10px',
-                    background: isSelected ? 'rgba(99, 102, 241, 0.12)' : 'rgba(15, 23, 42, 0.6)',
-                    border: '1px solid ' + (isSelected ? '#6366F1' : 'rgba(255, 255, 255, 0.06)'),
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#818CF8' }}>{inc.id}</span>
-                    <span style={{
-                      fontSize: '11px',
-                      padding: '2px 8px',
-                      borderRadius: '10px',
-                      fontWeight: 700,
-                      background: inc.severity === 'Critical' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                      color: inc.severity === 'Critical' ? '#EF4444' : '#F59E0B'
-                    }}>
-                      {inc.severity}
-                    </span>
-                  </div>
-
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#F1F5F9', marginBottom: '8px', lineHeight: '1.4' }}>
-                    {inc.title}
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94A3B8' }}>
-                    <span>📍 {inc.pop}</span>
-                    <span style={{ color: '#10B981', fontWeight: 700 }}>{inc.confidence}% RCA Conf.</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Data Pipeline Integration Hub Panel */}
-          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#F8FAFC', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Database size={14} color="#38BDF8" /> Integration Pipeline Status
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {mockIntegrations.map((item, idx) => (
-                <div key={idx} style={{ padding: '6px 10px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: '6px', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#CBD5E1' }}>{item.name}</span>
-                  <span style={{ color: '#4ADE80', fontWeight: 600 }}>{item.rate}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* Overview Tabs Navigation matching Kyro Design System */}
+      <div className="overview-tabs">
+        <div>
+          <button className={activeTab === 'rca' ? 'active' : ''} onClick={() => setActiveTab('rca')}>RCA & Evidence</button>
+          <button className={activeTab === 'impact' ? 'active' : ''} onClick={() => setActiveTab('impact')}>Customer Impact</button>
+          <button className={activeTab === 'changes' ? 'active' : ''} onClick={() => setActiveTab('changes')}>Change Intelligence</button>
+          <button className={activeTab === 'runbook' ? 'active' : ''} onClick={() => setActiveTab('runbook')}>Runbook Automation</button>
         </div>
+        <span><i className="dot green-dot" /> Kafka Pipeline Active (42.8k events/s)</span>
+      </div>
 
-        {/* Center: Visual RCA Investigation Workspace */}
+      {/* Main Grid matching Kyro page layout */}
+      <div className="main-grid" style={{ gridTemplateColumns: copilotOpen ? 'minmax(0,1.8fr) 300px' : '1fr' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Visual RCA Evidence Spotlight Card */}
-          <div style={{ background: 'linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%)', borderRadius: '14px', border: '1px solid rgba(99, 102, 241, 0.25)', padding: '20px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '16px' }}>
+          
+          {/* Top Incident Spotlight Card */}
+          <section className="card">
+            <div className="card-heading" style={{ paddingBottom: '16px' }}>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '18px', fontWeight: 800, color: '#F8FAFC' }}>{selectedIncident.title}</span>
-                  <span style={{ padding: '2px 8px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.15)', color: '#F87171', fontSize: '12px', fontWeight: 700 }}>{selectedIncident.status}</span>
-                </div>
-                <div style={{ fontSize: '12px', color: '#94A3B8' }}>
-                  Device: <code style={{ color: '#38BDF8', background: 'rgba(56, 189, 248, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>{selectedIncident.device}</code> • Correlation: 1,024 raw alerts → 120 signals → 1 incident
-                </div>
+                <h2>
+                  <ShieldAlert size={16} color="#efa476" />
+                  {selectedIncident.title}
+                </h2>
+                <p>Device: {selectedIncident.device} • Started: {selectedIncident.startTime} • MTTR: {selectedIncident.mttr}</p>
               </div>
-
-              {/* Confidence Meter */}
-              <div style={{ background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '10px 16px', borderRadius: '10px', textAlign: 'center' }}>
-                <div style={{ fontSize: '10px', color: '#6EE7B7', fontWeight: 700, textTransform: 'uppercase' }}>RCA CONFIDENCE</div>
-                <div style={{ fontSize: '22px', fontWeight: 800, color: '#34D399' }}>{selectedIncident.confidence}%</div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span className={`badge ${selectedIncident.severity === 'Critical' ? 'red' : 'orange'}`}>
+                  {selectedIncident.severity}
+                </span>
+                <span className="badge green">{selectedIncident.confidence}% RCA Confidence</span>
               </div>
             </div>
 
-            {/* RCA Hypothesis Breakdown (OBSERVED vs INFERRED vs PROBABLE vs CONFIRMED) */}
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: '#818CF8', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Zap size={14} /> Evidence-Based RCA Hypothesis Breakdown
+            {/* Core Loop Rationale */}
+            <div style={{ margin: '0 21px 16px', padding: '14px', background: '#202325', borderLeft: '3px solid #eaaa7f', borderRadius: '0 8px 8px 0' }}>
+              <div className="eyebrow" style={{ color: '#eaaa7f', marginBottom: '4px' }}>PROBABLE ROOT CAUSE HYPOTHESIS</div>
+              <div style={{ fontSize: '13px', color: '#e6e7e7', fontWeight: 550, lineHeight: '1.5' }}>
+                {selectedIncident.probableCause}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            </div>
+
+            {/* Stats Bar */}
+            <div className="stats" style={{ margin: '0 21px 20px', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
+              <div className="stat" style={{ background: '#202325', borderRadius: '8px' }}>
+                <div className="stat-label">Impacted Users</div>
+                <div className="stat-value" style={{ margin: '6px 0', fontSize: '22px' }}>{selectedIncident.impactedSubs.toLocaleString()}</div>
+                <div className="stat-bottom">Residential Subscriptions</div>
+              </div>
+              <div className="stat" style={{ background: '#202325', borderRadius: '8px' }}>
+                <div className="stat-label">Enterprise SLA</div>
+                <div className="stat-value" style={{ margin: '6px 0', fontSize: '22px', color: '#eaaa7f' }}>{selectedIncident.impactedSla}</div>
+                <div className="stat-bottom">Critical Circuits</div>
+              </div>
+              <div className="stat" style={{ background: '#202325', borderRadius: '8px' }}>
+                <div className="stat-label">Raw Alerts</div>
+                <div className="stat-value" style={{ margin: '6px 0', fontSize: '22px' }}>{selectedIncident.rawAlertsCount}</div>
+                <div className="stat-bottom">120 Signals Correlated</div>
+              </div>
+              <div className="stat" style={{ background: '#202325', borderRadius: '8px' }}>
+                <div className="stat-label">Target MTTR</div>
+                <div className="stat-value" style={{ margin: '6px 0', fontSize: '22px', color: '#accb91' }}>{selectedIncident.mttr}</div>
+                <div className="stat-bottom">Auto-Runbook Ready</div>
+              </div>
+            </div>
+          </section>
+
+          {/* RCA Evidence vs Impact vs Runbook Tabs */}
+          {activeTab === 'rca' && (
+            <section className="card">
+              <div className="card-heading">
+                <h2><Activity size={16} />Telemetry Signal Correlation & Evidence Cards</h2>
+              </div>
+              <div className="chart" style={{ height: '180px', margin: '15px 21px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={mockTelemetry}>
+                    <defs>
+                      <linearGradient id="rcaLossArea" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#efa476" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="#efa476" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="time" stroke="#777e80" fontSize={10} axisLine={false} tickLine={false} />
+                    <YAxis stroke="#777e80" fontSize={10} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ background: '#27292b', border: '1px solid #4b4c4e', borderRadius: '8px' }} />
+                    <Area type="monotone" dataKey="loss" stroke="#efa476" fill="url(#rcaLossArea)" strokeWidth={2} name="Packet Loss (%)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Evidence Log List */}
+              <div style={{ padding: '0 21px 21px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {selectedIncident.hypotheses.map((h, idx) => (
-                  <div key={idx} style={{ padding: '10px 14px', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{
-                        padding: '3px 8px',
-                        borderRadius: '4px',
-                        fontSize: '10px',
-                        fontWeight: 800,
-                        background: h.type === 'OBSERVED' ? 'rgba(56, 189, 248, 0.2)' : h.type === 'INFERRED' ? 'rgba(168, 85, 247, 0.2)' : h.type === 'PROBABLE' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(34, 197, 94, 0.2)',
-                        color: h.type === 'OBSERVED' ? '#38BDF8' : h.type === 'INFERRED' ? '#C084FC' : h.type === 'PROBABLE' ? '#F59E0B' : '#4ADE80'
-                      }}>
+                  <div key={idx} style={{ padding: '12px 16px', background: '#202325', border: '1px solid #35393b', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <span className={`badge ${h.type === 'OBSERVED' ? 'green' : h.type === 'INFERRED' ? 'orange' : h.type === 'PROBABLE' ? 'orange' : 'green'}`}>
                         {h.type}
                       </span>
-                      <span style={{ fontSize: '12px', color: '#F1F5F9', fontWeight: 500 }}>{h.text}</span>
+                      <span style={{ color: '#d0d6da', fontSize: '11px', fontWeight: 550 }}>{h.text}</span>
                     </div>
-                    <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>{h.status}</span>
+                    <span className="muted" style={{ fontSize: '10px' }}>{h.status}</span>
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
+          )}
 
-            {/* Dependency Chain Visual */}
-            <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Impacted Dependency Chain</div>
-              <div style={{ fontSize: '12px', color: '#E2E8F0', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#EF4444', padding: '3px 8px', borderRadius: '4px', fontWeight: 700 }}>Upstream IIG Router</span>
-                <ChevronRight size={12} color="#64748B" />
-                <span style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#F59E0B', padding: '3px 8px', borderRadius: '4px', fontWeight: 700 }}>Ge0/0/1 SFP Optical Link</span>
-                <ChevronRight size={12} color="#64748B" />
-                <span style={{ background: 'rgba(168, 85, 247, 0.2)', color: '#C084FC', padding: '3px 8px', borderRadius: '4px', fontWeight: 700 }}>Gulshan & Banani POPs</span>
-                <ChevronRight size={12} color="#64748B" />
-                <span style={{ background: 'rgba(56, 189, 248, 0.2)', color: '#38BDF8', padding: '3px 8px', borderRadius: '4px', fontWeight: 700 }}>12,846 Subscribers</span>
+          {activeTab === 'impact' && (
+            <section className="card">
+              <div className="card-heading">
+                <h2><Users size={16} />Affected SLA Enterprise Clients & Coverage Areas</h2>
               </div>
-            </div>
-          </div>
-
-          {/* Interactive Operator CLI Terminal Console */}
-          <div style={{ background: '#090D16', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '16px', fontFamily: 'JetBrains Mono, monospace', fontSize: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', marginBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.08)', color: '#4ADE80' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Terminal size={15} />
-                <span style={{ fontWeight: 700 }}>EMBEDDED OPERATOR TERMINAL (PUKU AI CONNECTED)</span>
-              </div>
-            </div>
-            <div style={{ maxHeight: '140px', overflowY: 'auto', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {cliOutput.map((line, idx) => (
-                <div key={idx} style={{ color: line.startsWith('kyro-cli>') ? '#38BDF8' : '#CBD5E1', lineHeight: '1.5' }}>
-                  {line}
+              <div style={{ padding: '16px 21px 21px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <div className="eyebrow" style={{ marginBottom: '10px' }}>CRITICAL B2B SLA CIRCUITS</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {['Grameenphone HQ Core Link (10 Gbps)', 'Standard Chartered Fiber Backup', 'BRAC Bank Gulshan Branch'].map((item, i) => (
+                      <div key={i} style={{ padding: '10px 14px', background: '#202325', borderRadius: '7px', display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                        <span>{item}</span>
+                        <span className="badge red">Degraded</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
-            <form onSubmit={handleCliSubmit} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <span style={{ color: '#4ADE80', fontWeight: 700 }}>kyro-cli&gt;</span>
-              <input
-                type="text"
-                value={cliInput}
-                onChange={(e) => setCliInput(e.target.value)}
-                placeholder="Type CLI command (e.g. puku analyze INC-9042, puku impact, puku pipeline status, help)..."
-                style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '8px 12px', color: '#F8FAFC', fontFamily: 'monospace', outline: 'none' }}
-              />
-              <button type="submit" style={{ padding: '8px 16px', background: '#22C55E', color: '#090D16', border: 'none', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}>Execute</button>
-            </form>
-          </div>
+                <div>
+                  <div className="eyebrow" style={{ marginBottom: '10px' }}>IMPACTED POP POPULATION</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {['Gulshan 1 & 2 POP (7,420 Users)', 'Banani Commercial Subnet (3,800 Users)', 'Niketan Fiber Loop (1,626 Users)'].map((item, i) => (
+                      <div key={i} style={{ padding: '10px 14px', background: '#202325', borderRadius: '7px', display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                        <span>{item}</span>
+                        <span className="badge orange">High Loss</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {activeTab === 'changes' && (
+            <section className="card">
+              <div className="card-heading">
+                <h2><GitCommit size={16} />Correlated Configuration Diffs & Maintenance Timeline</h2>
+              </div>
+              <div style={{ margin: '16px 21px 21px', padding: '16px', background: '#17191b', border: '1px solid #303335', borderRadius: '8px', fontFamily: 'monospace', fontSize: '11px' }}>
+                <div style={{ color: '#84898e', marginBottom: '8px' }}>Commit: #c8f941a by engineer raihan@kyro.net (13:58 UTC - 12m prior)</div>
+                <div style={{ color: '#d59994' }}>- router bgp 64512 neighbor 103.14.22.1 holdtime 90</div>
+                <div style={{ color: '#accb91' }}>+ router bgp 64512 neighbor 103.14.22.1 holdtime 15</div>
+                <div style={{ color: '#84898e', marginTop: '8px' }}>Analysis: Reduced holdtime triggered BGP flap under optical attenuation.</div>
+              </div>
+            </section>
+          )}
+
+          {activeTab === 'runbook' && (
+            <section className="card">
+              <div className="card-heading">
+                <div>
+                  <h2><Play size={16} />Recommended Runbook: {selectedIncident.recommendedRunbook}</h2>
+                  <p>Automated remediation workflow with human authorization guardrails.</p>
+                </div>
+                <span className={`badge ${runbookState === 'Completed' ? 'green' : runbookState === 'Waiting for Approval' ? 'orange' : 'neutral'}`}>
+                  State: {runbookState}
+                </span>
+              </div>
+              <div style={{ padding: '16px 21px 21px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ padding: '10px 14px', background: '#202325', borderRadius: '7px', fontSize: '11px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <CheckCircle size={15} color="#accb91" /> Step 1: Verify Optical Fiber Signal Stability on Secondary Uplink (Passed)
+                </div>
+                <div style={{ padding: '10px 14px', background: '#202325', borderRadius: '7px', fontSize: '11px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <CheckCircle size={15} color={runbookState !== 'Not Started' ? '#accb91' : '#737b82'} /> Step 2: Trigger BGP Weight Shift to Secondary IIG Path (Requires Approval)
+                </div>
+                <div style={{ padding: '10px 14px', background: '#202325', borderRadius: '7px', fontSize: '11px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <CheckCircle size={15} color={runbookState === 'Completed' ? '#accb91' : '#737b82'} /> Step 3: Notify Enterprise NOC Contacts via SMS/Email API (Completed)
+                </div>
+                <div style={{ marginTop: '10px' }}>
+                  {runbookState === 'Not Started' && (
+                    <button className="primary" onClick={executeRunbook}><Play size={14} /> Execute Runbook</button>
+                  )}
+                  {runbookState === 'Waiting for Approval' && (
+                    <button className="primary" onClick={approveRunbook}><ShieldAlert size={14} /> Approve BGP Path Shift</button>
+                  )}
+                  {runbookState === 'Completed' && (
+                    <span style={{ color: '#accb91', fontWeight: 650, fontSize: '11px' }}>Remediation Completed Successfully!</span>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Embedded CLI Terminal Bar matching Kyro styling */}
+          {cliOpen && (
+            <section className="card" style={{ background: '#151719' }}>
+              <div className="card-heading" style={{ borderBottom: '1px solid #2b2e30', paddingBottom: '12px' }}>
+                <h2><Terminal size={15} />Kyro Operator Terminal (Puku AI Connected)</h2>
+                <button className="text-button" onClick={() => setCliOpen(false)}>Hide</button>
+              </div>
+              <div style={{ padding: '16px 21px', fontFamily: 'monospace', fontSize: '11px' }}>
+                <div style={{ maxHeight: '120px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px' }}>
+                  {cliOutput.map((l, i) => (
+                    <div key={i} style={{ color: l.startsWith('kyro-cli>') ? '#efa476' : '#d0d6da' }}>{l}</div>
+                  ))}
+                </div>
+                <form onSubmit={handleCliSubmit} style={{ display: 'flex', gap: '8px' }}>
+                  <span style={{ color: '#accb91', fontWeight: 600 }}>kyro-cli&gt;</span>
+                  <input
+                    type="text"
+                    value={cliInput}
+                    onChange={e => setCliInput(e.target.value)}
+                    placeholder="Type CLI command (e.g. puku analyze INC-9042, puku pipeline status, help)..."
+                    style={{ flex: 1, padding: '6px 10px', fontSize: '11px', fontFamily: 'monospace' }}
+                  />
+                  <button className="primary" style={{ padding: '6px 14px' }}>Execute</button>
+                </form>
+              </div>
+            </section>
+          )}
         </div>
 
-        {/* Right Drawer: Puku AI Copilot Panel */}
+        {/* Right Drawer: Puku Copilot Panel */}
         {copilotOpen && (
-          <div style={{ background: '#111622', borderRadius: '12px', border: '1px solid rgba(99, 102, 241, 0.25)', padding: '16px', display: 'flex', flexDirection: 'column', height: '620px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Sparkles size={16} color="#818CF8" />
-                <span style={{ fontWeight: 700, fontSize: '14px', color: '#F8FAFC' }}>Puku AI Copilot</span>
+          <section className="card" style={{ height: 'fit-content' }}>
+            <div className="card-heading" style={{ borderBottom: '1px solid #2b2e30', paddingBottom: '12px' }}>
+              <h2><Sparkles size={15} />Puku AI Copilot</h2>
+              <button className="text-button" onClick={() => setCopilotOpen(false)}>Close</button>
+            </div>
+            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ maxHeight: '350px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {chatMessages.map((m, i) => (
+                  <div key={i} style={{ padding: '10px 12px', borderRadius: '8px', background: m.sender === 'puku' ? '#202325' : '#332a24', border: '1px solid ' + (m.sender === 'puku' ? '#35393b' : '#554032'), fontSize: '11px', color: m.sender === 'puku' ? '#d0d6da' : '#f2b287' }}>
+                    {m.text}
+                  </div>
+                ))}
               </div>
-              <button onClick={() => setCopilotOpen(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>✕</button>
+              <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '6px' }}>
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  placeholder="Ask Puku AI..."
+                  style={{ flex: 1, fontSize: '11px' }}
+                />
+                <button className="primary" style={{ padding: '6px 12px' }}><Send size={13} /></button>
+              </form>
             </div>
-
-            {/* Chat Messages */}
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '12px' }}>
-              {chatMessages.map((msg, idx) => (
-                <div key={idx} style={{
-                  padding: '10px 12px',
-                  borderRadius: '10px',
-                  fontSize: '12px',
-                  lineHeight: '1.5',
-                  background: msg.sender === 'puku' ? 'rgba(99, 102, 241, 0.12)' : 'rgba(30, 41, 59, 0.8)',
-                  border: '1px solid ' + (msg.sender === 'puku' ? 'rgba(99, 102, 241, 0.25)' : 'rgba(255,255,255,0.06)'),
-                  color: msg.sender === 'puku' ? '#E0E7FF' : '#F8FAFC',
-                  alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                  maxWidth: '90%'
-                }}>
-                  {msg.text}
-                </div>
-              ))}
-            </div>
-
-            {/* Chat Input */}
-            <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '6px' }}>
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Ask Puku AI (e.g. why did this happen, draft SLA advisory)..."
-                style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '8px 10px', color: '#F8FAFC', fontSize: '12px', outline: 'none' }}
-              />
-              <button type="submit" style={{ padding: '8px 12px', background: '#4F46E5', border: 'none', borderRadius: '6px', color: '#FFF', cursor: 'pointer' }}>
-                <Send size={14} />
-              </button>
-            </form>
-          </div>
+          </section>
         )}
       </div>
     </div>
