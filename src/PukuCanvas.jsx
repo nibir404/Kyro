@@ -1,168 +1,160 @@
-import React, { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import React, { useState, useRef } from 'react';
 import {
-  Network, ArrowUpRight, RotateCcw, Pause, Play, MousePointer2, Layers, Radio, Activity,
-  Server, Search, Users, Terminal, CheckCircle2, ShieldAlert, Cpu, Zap, X, Plus, Trash2,
-  Lock, Maximize2, Monitor, Smartphone, Tablet, Mail, Eye, Sliders, ChevronDown, RefreshCw
+  Play, Sparkles, Plus, Terminal, RefreshCw, Layers, CheckCircle2, ShieldAlert,
+  Cpu, ArrowRight, MessageSquare, Code, Settings, Trash2, Lock, PlusCircle,
+  Search, SlidersHorizontal, ChevronRight, ChevronDown, Check, HelpCircle,
+  FileCode, Zap, AlertTriangle, Activity, Send, Paperclip, ExternalLink, X, Star,
+  Copy, Maximize2, Monitor, Smartphone, Tablet, Undo, Redo, Eye, ShieldCheck,
+  Grid, Compass, Database, Radio, Globe, Server, Network, Wifi, ListFilter
 } from 'lucide-react';
 
-const packetDevices = [
-  { id: 0, name: 'WRT300N ISP', type: 'ISP Router', ip: '103.14.22.1', status: 'Healthy', pos: [0, 1.2, 0], color: '#38BDF8' },
-  { id: 1, name: 'Pixelz Router 1', type: 'Core Router', ip: '192.168.21.1', status: 'Healthy', pos: [-2, 0, 0], color: '#4ADE80' },
-  { id: 2, name: 'PC Pixelz 1', type: 'End Device', ip: '192.168.21.2/29', status: 'Active', pos: [-4.5, 0.5, 1], color: '#38BDF8' },
-  { id: 3, name: 'PC Pixelz 2', type: 'End Device', ip: '192.168.21.3/29', status: 'Active', pos: [2.5, 0.5, -1], color: '#38BDF8' },
-  { id: 4, name: 'Smartphone 3', type: 'Mobile', ip: '192.168.21.4/29', status: 'Active', pos: [-3, -0.8, -1.5], color: '#F59E0B' },
-  { id: 5, name: 'Laptop Pixelz 2', type: 'Laptop', ip: '192.168.31.8/29', status: 'Active', pos: [0, -1, 1.5], color: '#C084FC' }
+const availableBlocks = [
+  { id: 'b-1', title: 'BGP Flap Trigger', type: 'Trigger', category: 'Telemetry', desc: 'Fires when BGP peer holdtime expires.', accent: '#eaaa7f' },
+  { id: 'b-2', title: 'Puku RCA Agent', type: 'AI Agent', category: 'Reasoning', desc: 'Correlates Syslog, NetFlow & SNMP anomalies.', accent: '#accb91' },
+  { id: 'b-3', title: 'BGP Path Reroute', type: 'Action', category: 'NetOps', desc: 'Diverts traffic to backup optical link.', accent: '#9badbd' },
+  { id: 'b-4', title: 'NOC Guardrail Check', type: 'Logic', category: 'Control', desc: 'Pauses execution until engineer approves.', accent: '#d9a077' }
 ];
 
-const simulationEvents = [
-  { time: '0.253', lastDevice: '---', atDevice: 'Hub 1', type: 'ICMP', color: '#4ADE80' },
-  { time: '0.254', lastDevice: 'Hub 1', atDevice: 'PC Pixelz 2', type: 'ICMP', color: '#4ADE80' },
-  { time: '0.255', lastDevice: 'PC Pixelz 2', atDevice: 'Hub 1', type: 'ICMP', color: '#4ADE80' },
-  { time: '0.256', lastDevice: 'Hub 1', atDevice: 'PC Pixelz 1', type: 'ICMP', color: '#4ADE80' },
-  { time: '0.258', lastDevice: 'Pixelz Router 1', atDevice: 'WRT300N', type: 'BGP', color: '#F59E0B' }
+const initialNodes = [
+  {
+    id: 'node-1',
+    title: 'BGP Flap Trigger',
+    type: 'Trigger',
+    x: 60,
+    y: 100,
+    status: 'Active',
+    device: 'dhaka-core-01.kyro.net',
+    params: { holdtime: '15s', peer: '103.14.22.1' },
+    accent: '#eaaa7f'
+  },
+  {
+    id: 'node-2',
+    title: 'Puku RCA Agent',
+    type: 'AI Agent',
+    x: 340,
+    y: 100,
+    status: 'Running',
+    confidence: '94%',
+    params: { model: 'Puku-v2.4', window: '15m' },
+    accent: '#accb91'
+  },
+  {
+    id: 'node-3',
+    title: 'NOC Guardrail Check',
+    type: 'Logic',
+    x: 620,
+    y: 100,
+    status: 'Waiting Approval',
+    params: { approver: 'Raihan Ahmed', timeout: '30m' },
+    accent: '#d9a077'
+  },
+  {
+    id: 'node-4',
+    title: 'BGP Path Reroute',
+    type: 'Action',
+    x: 900,
+    y: 100,
+    status: 'Queued',
+    params: { targetLink: 'Gulshan Link-02', weight: '200' },
+    accent: '#9badbd'
+  }
 ];
 
 export default function PukuCanvas({ onClose }) {
-  const mountRef = useRef(null);
-  const [selectedDevice, setSelectedDevice] = useState(packetDevices[1]);
+  const [nodes, setNodes] = useState(initialNodes);
+  const [selectedNode, setSelectedNode] = useState(initialNodes[1]);
   const [mode, setMode] = useState('Simulation'); // 'Real time' | 'Simulation'
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [terminalOpen, setTerminalOpen] = useState(false);
+  const [copilotOpen, setCopilotOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [terminalOpen, setTerminalOpen] = useState(true);
+  const [isExecuting, setIsExecuting] = useState(false);
+
+  // Puku AI Copilot Chat State
+  const [chatMessages, setChatMessages] = useState([
+    { sender: 'puku', text: 'Puku AI Active. Workflow canvas initialized with 4 interactive runbook nodes. You can drag nodes, edit parameters, or type commands in Puku CLI.' }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+
+  // Terminal CLI State
   const [termLogs, setTermLogs] = useState([
-    '[PACKET TRACER 3D] Three.js Engine loaded with WebGL Renderer.',
-    '[SIMULATION] ICMP & BGP packet simulation active.',
-    'Type "puku analyze INC-9042" or "ping 192.168.21.2" to test CLI.'
+    'Kyro Puku Canvas v2.4.0 [Interactive Automation Mode]',
+    'Connected to Link3 Telemetry Pipeline (356 routers active)',
+    'Type "puku help" or "puku execute" to test automation.'
   ]);
   const [termInput, setTermInput] = useState('');
 
-  // Three.js Canvas Scene Setup
-  useEffect(() => {
-    const container = mountRef.current;
-    if (!container) return;
+  // Node Dragging State
+  const [draggingNodeId, setDraggingNodeId] = useState(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
-    let renderer;
-    try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    } catch (e) {
-      return;
+  const handleMouseDown = (e, node) => {
+    e.stopPropagation();
+    setSelectedNode(node);
+    setDraggingNodeId(node.id);
+    setDragOffset({
+      x: e.clientX - node.x,
+      y: e.clientY - node.y
+    });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!draggingNodeId) return;
+    const stage = document.getElementById('kyro-canvas-stage');
+    if (!stage) return;
+    const rect = stage.getBoundingClientRect();
+    const newX = Math.max(10, Math.min(rect.width - 240, e.clientX - rect.left - dragOffset.x));
+    const newY = Math.max(10, Math.min(rect.height - 200, e.clientY - rect.top - dragOffset.y));
+
+    setNodes(prev => prev.map(n => n.id === draggingNodeId ? { ...n, x: newX, y: newY } : n));
+  };
+
+  const handleMouseUp = () => {
+    setDraggingNodeId(null);
+  };
+
+  const addBlockToCanvas = (block) => {
+    const newNode = {
+      id: `node-${nodes.length + 1}`,
+      title: block.title,
+      type: block.type,
+      x: 100 + (nodes.length * 40) % 360,
+      y: 120 + (nodes.length * 30) % 180,
+      status: 'Configured',
+      params: { created: 'Just now', target: 'Auto-assigned' },
+      accent: block.accent
+    };
+    setNodes([...nodes, newNode]);
+    setSelectedNode(newNode);
+    setPaletteOpen(false);
+  };
+
+  const deleteNode = (id) => {
+    setNodes(nodes.filter(n => n.id !== id));
+    if (selectedNode?.id === id) {
+      setSelectedNode(null);
     }
+  };
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setClearColor(0x0C0E14, 1);
-    container.appendChild(renderer.domElement);
+  const runSimulation = () => {
+    setIsExecuting(true);
+    setTermLogs(prev => [...prev, '[EXECUTOR] Initiating interactive workflow runbook simulation...']);
+    
+    setTimeout(() => {
+      setNodes(prev => prev.map(n => n.id === 'node-1' ? { ...n, status: 'Completed' } : n));
+      setTermLogs(prev => [...prev, '[NODE 1] BGP Flap Trigger: Event Fired (0.2s)']);
+    }, 600);
 
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x0C0E14, 0.04);
+    setTimeout(() => {
+      setNodes(prev => prev.map(n => n.id === 'node-2' ? { ...n, status: 'Completed' } : n));
+      setTermLogs(prev => [...prev, '[NODE 2] Puku RCA Agent: Identified optical power drop (-28.4 dBm) (0.4s)']);
+    }, 1400);
 
-    const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
-    camera.position.set(0, 0, 10);
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.rotateSpeed = 0.6;
-
-    // Ambient & Directional Lights
-    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-    const dirLight = new THREE.DirectionalLight(0x38BDF8, 2);
-    dirLight.position.set(5, 10, 7);
-    scene.add(dirLight);
-
-    // Dotted Grid Floor Background
-    const grid = new THREE.GridHelper(20, 40, 0x334155, 0x1E293B);
-    grid.position.y = -2;
-    grid.rotation.x = Math.PI / 6;
-    scene.add(grid);
-
-    // Build 3D Devices & Mesh Nodes
-    const nodeMeshes = [];
-    const packetParticles = [];
-
-    packetDevices.forEach((dev) => {
-      const group = new THREE.Group();
-      group.position.set(...dev.pos);
-
-      // Node Sphere Body
-      const geo = dev.type.includes('Router') ? new THREE.CylinderGeometry(0.5, 0.5, 0.25, 16) : new THREE.BoxGeometry(0.6, 0.5, 0.3);
-      const mat = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(dev.color),
-        roughness: 0.3,
-        metalness: 0.7,
-        emissive: new THREE.Color(dev.color),
-        emissiveIntensity: 0.2
-      });
-      const mesh = new THREE.Mesh(geo, mat);
-      group.add(mesh);
-
-      // Outer Glowing Ring
-      const ringGeo = new THREE.RingGeometry(0.6, 0.68, 32);
-      const ringMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(dev.color), side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
-      const ring = new THREE.Mesh(ringGeo, ringMat);
-      ring.rotation.x = Math.PI / 2;
-      group.add(ring);
-
-      scene.add(group);
-      nodeMeshes.push({ group, data: dev });
-    });
-
-    // Create Connecting Line Cables between Router and End Devices
-    const hubPos = new THREE.Vector3(...packetDevices[1].pos);
-    packetDevices.slice(2).forEach((dev) => {
-      const devPos = new THREE.Vector3(...dev.pos);
-      const points = [hubPos, devPos];
-      const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-      const lineMat = new THREE.LineBasicMaterial({ color: 0x38BDF8, transparent: true, opacity: 0.5 });
-      const line = new THREE.Line(lineGeo, lineMat);
-      scene.add(line);
-
-      // Packet Pulse Particle Traveling Along Cable
-      const particleGeo = new THREE.SphereGeometry(0.08, 8, 8);
-      const particleMat = new THREE.MeshBasicMaterial({ color: 0x4ADE80 });
-      const particle = new THREE.Mesh(particleGeo, particleMat);
-      scene.add(particle);
-      packetParticles.push({ mesh: particle, start: hubPos, end: devPos, progress: Math.random() });
-    });
-
-    // Animation Loop
-    let animationFrameId;
-    const animate = () => {
-      animationFrameId = requestAnimationFrame(animate);
-      controls.update();
-
-      // Animate Packet Particles moving along lines
-      packetParticles.forEach(p => {
-        p.progress += 0.008;
-        if (p.progress > 1) p.progress = 0;
-        p.mesh.position.lerpVectors(p.start, p.end, p.progress);
-      });
-
-      // Slowly rotate device rings
-      nodeMeshes.forEach(n => {
-        n.group.rotation.y += 0.005;
-      });
-
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    const handleResize = () => {
-      if (!container) return;
-      camera.aspect = container.clientWidth / container.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(container.clientWidth, container.clientHeight);
-    };
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('resize', handleResize);
-      if (renderer.domElement) container.removeChild(renderer.domElement);
-      renderer.dispose();
-    };
-  }, []);
+    setTimeout(() => {
+      setNodes(prev => prev.map(n => n.id === 'node-3' ? { ...n, status: 'Waiting Approval' } : n));
+      setTermLogs(prev => [...prev, '[NODE 3] NOC Guardrail: Execution paused for engineer approval.']);
+      setIsExecuting(false);
+    }, 2200);
+  };
 
   const handleTermSubmit = (e) => {
     e.preventDefault();
@@ -177,16 +169,21 @@ export default function PukuCanvas({ onClose }) {
     } else if (cmd === 'puku help' || cmd === 'help') {
       newLogs.push(
         'Available Commands:',
-        '  puku analyze <INC-ID>  - Run AI root cause analysis',
-        '  ping <IP>              - Trace packet delay and loss',
-        '  clear                  - Clear console'
+        '  puku execute          - Run visual workflow simulation',
+        '  puku analyze <INC-ID>  - Run AI root cause diagnostics',
+        '  puku status           - Check Puku AI core state',
+        '  clear                 - Clear output'
       );
-    } else if (cmd.startsWith('ping')) {
+    } else if (cmd === 'puku execute' || cmd === 'run') {
+      runSimulation();
+      setTermInput('');
+      return;
+    } else if (cmd.startsWith('puku analyze')) {
       newLogs.push(
-        `PING ${cmd.split(' ')[1] || '192.168.21.2'}: 56 data bytes`,
-        '64 bytes from 192.168.21.2: icmp_seq=0 ttl=64 time=0.254 ms',
-        '64 bytes from 192.168.21.2: icmp_seq=1 ttl=64 time=0.251 ms',
-        '2 packets transmitted, 2 received, 0% packet loss'
+        '[PUKU AI ANALYSIS] Incident INC-9042:',
+        '  • Probable Cause (94% Conf): Optical Rx Power drop (-28.4 dBm) on Ge0/0/1',
+        '  • Impacted Users: 12,846 residential, 14 enterprise SLA circuits',
+        '  • Recommended Action: Execute BGP Path Reroute runbook'
       );
     } else {
       newLogs.push(`Executing command: "${cmd}". Type "puku help" for available commands.`);
@@ -196,172 +193,258 @@ export default function PukuCanvas({ onClose }) {
     setTermInput('');
   };
 
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    const text = chatInput;
+    setChatMessages(prev => [...prev, { sender: 'user', text }]);
+    setChatInput('');
+
+    setTimeout(() => {
+      setChatMessages(prev => [
+        ...prev,
+        {
+          sender: 'puku',
+          text: `Puku AI processed: "${text}". Workflow nodes and telemetry execution logs synchronized.`
+        }
+      ]);
+    }, 600);
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 70px)', background: '#0C0E14', color: '#E2E8F0', overflow: 'hidden', fontFamily: 'Inter, system-ui, sans-serif' }}>
-      {/* Top Cisco Packet Tracer Header Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 20px', background: '#121622', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <Activity size={20} color="#38BDF8" />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 700, color: '#F8FAFC' }}>
-            <span>Logical View</span> <ChevronDown size={14} color="#64748B" />
-          </div>
-          <span style={{ color: '#475569' }}>|</span>
-          <span style={{ fontSize: '13px', color: '#CBD5E1', fontWeight: 600 }}>Cisco Packet Tracer / Class 1 ⌄</span>
+    <div
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
+    >
+      {/* Standard Kyro Page Heading */}
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">VISUAL WORKFLOW & AUTOMATION ENGINE</div>
+          <h1>Puku AI Workflow Canvas<span className="title-dot">.</span></h1>
+          <p>Interactive drag-and-drop workflow canvas with automated runbooks and Puku CLI.</p>
         </div>
-
-        {/* Real Time vs Simulation Mode Toggles */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ display: 'flex', background: 'rgba(15, 23, 42, 0.8)', padding: '3px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <button
-              onClick={() => setMode('Real time')}
-              style={{
-                padding: '6px 14px',
-                borderRadius: '6px',
-                border: 'none',
-                background: mode === 'Real time' ? 'rgba(255,255,255,0.12)' : 'transparent',
-                color: mode === 'Real time' ? '#FFF' : '#94A3B8',
-                fontWeight: 600,
-                fontSize: '12px',
-                cursor: 'pointer'
-              }}
-            >
-              ⏱️ Real time
-            </button>
-            <button
-              onClick={() => setMode('Simulation')}
-              style={{
-                padding: '6px 14px',
-                borderRadius: '6px',
-                border: 'none',
-                background: mode === 'Simulation' ? '#4F46E5' : 'transparent',
-                color: '#FFF',
-                fontWeight: 700,
-                fontSize: '12px',
-                cursor: 'pointer'
-              }}
-            >
-              ⏱️ Simulation
-            </button>
-          </div>
-
-          <button
-            onClick={() => setTerminalOpen(!terminalOpen)}
-            style={{ padding: '6px 12px', borderRadius: '6px', background: terminalOpen ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.06)', border: '1px solid ' + (terminalOpen ? '#A855F7' : 'rgba(255,255,255,0.1)'), color: terminalOpen ? '#C084FC' : '#E2E8F0', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            <Terminal size={14} /> CLI Terminal
+        <div className="heading-actions">
+          <button onClick={runSimulation} disabled={isExecuting}>
+            <Zap size={14} /> {isExecuting ? 'Simulating...' : 'Test Runbook ⚡'}
           </button>
-
-          {/* Close Canvas Option */}
+          <button className="primary" onClick={() => setCopilotOpen(!copilotOpen)}>
+            <Sparkles size={15} /> Puku Copilot
+          </button>
           {onClose && (
-            <button
-              onClick={onClose}
-              style={{ padding: '6px 14px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#F87171', fontWeight: 700, fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
+            <button onClick={onClose} style={{ borderColor: '#5c3636', color: '#d59994', background: '#3c2929' }}>
               <X size={14} /> Close Canvas
             </button>
           )}
         </div>
       </div>
 
-      {/* Main Canvas Split View */}
-      <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
-        
-        {/* Left Toolbar Icon Column */}
-        <div style={{ width: '48px', background: '#11141C', borderRight: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0', gap: '14px', zIndex: 10 }}>
-          <button title="Select Cursor" style={{ background: 'none', border: 'none', color: '#38BDF8', cursor: 'pointer' }}><MousePointer2 size={18} /></button>
-          <button title="Zoom Stage" style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}><Search size={18} /></button>
-          <button title="Delete Item" style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer' }}><X size={18} /></button>
-          <button title="Inspect Properties" style={{ background: 'none', border: 'none', color: '#F59E0B', cursor: 'pointer' }}><Sliders size={18} /></button>
-          <button title="Connect Cable" style={{ background: 'none', border: 'none', color: '#4ADE80', cursor: 'pointer' }}><Zap size={18} /></button>
-          <button title="Ping Packet Test" style={{ background: 'none', border: 'none', color: '#C084FC', cursor: 'pointer' }}><Mail size={18} /></button>
+      {/* Tabs & Controls Bar matching Kyro styling */}
+      <div className="overview-tabs">
+        <div>
+          <button className={mode === 'Simulation' ? 'active' : ''} onClick={() => setMode('Simulation')}>Simulation Mode</button>
+          <button className={mode === 'Real time' ? 'active' : ''} onClick={() => setMode('Real time')}>Real Time Stream</button>
+          <button onClick={() => setPaletteOpen(!paletteOpen)}>+ Add Block</button>
+          <button onClick={() => setTerminalOpen(!terminalOpen)}><Terminal size={13} /> Puku CLI {terminalOpen ? '(Active)' : ''}</button>
         </div>
-
-        {/* Center Stage: Three.js 3D Spatial Canvas */}
-        <div style={{ flex: 1, position: 'relative' }}>
-          <div ref={mountRef} style={{ width: '100%', height: '100%' }} />
-
-          {/* Bottom Floating Device Dock */}
-          <div style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', background: '#121622', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '16px', boxShadow: '0 12px 32px rgba(0,0,0,0.6)', zIndex: 10 }}>
-            <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 700 }}>End Device:</span>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: 'none', color: '#38BDF8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 600 }}><Monitor size={14} /> PC</button>
-              <button style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: 'none', color: '#F59E0B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 600 }}><Smartphone size={14} /> Mobile</button>
-              <button style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: 'none', color: '#4ADE80', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 600 }}><Server size={14} /> Server</button>
-              <button style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: 'none', color: '#C084FC', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 600 }}><Network size={14} /> Router</button>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Simulation Panel */}
-        <div style={{ width: '320px', background: '#11141C', borderLeft: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', zIndex: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, margin: 0, color: '#F8FAFC' }}>Simulation Panel</h3>
-            <span style={{ fontSize: '11px', color: '#94A3B8' }}>Play Controls</span>
-          </div>
-
-          {/* Simulation Controls */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', background: 'rgba(15, 23, 42, 0.6)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <button onClick={() => setIsPlaying(!isPlaying)} style={{ padding: '8px 16px', background: '#4F46E5', color: '#FFF', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
-              {isPlaying ? <Pause size={14} /> : <Play size={14} />} {isPlaying ? 'Pause' : 'Play'}
-            </button>
-          </div>
-
-          {/* Event List Table */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#94A3B8', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
-              <span>Event List</span>
-              <span style={{ color: '#38BDF8', cursor: 'pointer' }}>Reset Simulation</span>
-            </div>
-
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {simulationEvents.map((ev, idx) => (
-                <div key={idx} style={{ padding: '8px 10px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: '6px', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#64748B' }}>{ev.time}s</span>
-                  <span style={{ color: '#F1F5F9' }}>{ev.atDevice}</span>
-                  <span style={{ color: ev.color, fontWeight: 700 }}>{ev.type}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Event List Filter Chips */}
-          <div>
-            <div style={{ fontSize: '11px', color: '#94A3B8', marginBottom: '6px' }}>Protocol Filters</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {['ARP', 'BGP', 'DHCP', 'DNS', 'ICMP', 'OSPF'].map(p => (
-                <span key={p} style={{ padding: '3px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', fontSize: '10px', color: '#CBD5E1', cursor: 'pointer' }}>
-                  {p}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
+        <span><i className="dot green-dot" /> 356 Core Routers Connected</span>
       </div>
 
-      {/* Togglable Terminal Console */}
-      {terminalOpen && (
-        <div style={{ height: '160px', background: '#090D16', borderTop: '1px solid rgba(255,255,255,0.08)', padding: '12px 16px', fontFamily: 'monospace', fontSize: '12px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', color: '#4ADE80', fontWeight: 700 }}>
-            <span>KYRO INTERACTIVE TERMINAL (PUKU AI CONNECTED)</span>
-            <button onClick={() => setTerminalOpen(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>✕</button>
-          </div>
-          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
-            {termLogs.map((l, i) => (
-              <div key={i} style={{ color: l.startsWith('kyro-cli>') ? '#38BDF8' : '#CBD5E1' }}>{l}</div>
-            ))}
-          </div>
-          <form onSubmit={handleTermSubmit} style={{ display: 'flex', gap: '8px' }}>
-            <span style={{ color: '#4ADE80', fontWeight: 700 }}>kyro-cli&gt;</span>
-            <input
-              type="text"
-              value={termInput}
-              onChange={e => setTermInput(e.target.value)}
-              placeholder="Type CLI command (e.g. ping 192.168.21.2, puku analyze INC-9042, help)..."
-              style={{ flex: 1, background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', padding: '6px 10px', color: '#FFF', fontFamily: 'monospace' }}
-            />
-          </form>
+      {/* Main Grid: Left Block Palette (if open) / Center Stage / Right Inspector & Copilot */}
+      <div className="main-grid" style={{ gridTemplateColumns: copilotOpen ? 'minmax(0,1.8fr) 300px' : '1fr' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+          {/* Center Stage Canvas */}
+          <section
+            id="kyro-canvas-stage"
+            className="card"
+            style={{
+              height: '520px',
+              position: 'relative',
+              background: '#16181a',
+              backgroundImage: 'radial-gradient(#393e42 1px, transparent 1px)',
+              backgroundSize: '20px 20px',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Palette Drawer Popover */}
+            {paletteOpen && (
+              <div style={{
+                position: 'absolute',
+                top: '16px',
+                left: '16px',
+                width: '260px',
+                background: '#202628',
+                border: '1px solid #4b5559',
+                borderRadius: '10px',
+                boxShadow: '0 12px 36px #0009',
+                zIndex: 30,
+                padding: '12px'
+              }}>
+                <div style={{ fontSize: '12px', fontWeight: 650, color: '#e5e5e5', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Block Library</span>
+                  <button className="text-button" onClick={() => setPaletteOpen(false)}>✕</button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {availableBlocks.map(block => (
+                    <div
+                      key={block.id}
+                      onClick={() => addBlockToCanvas(block)}
+                      style={{ padding: '8px 10px', background: '#16181a', border: '1px solid #303638', borderRadius: '6px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = '#eaaa7f'}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = '#303638'}
+                    >
+                      <div>
+                        <strong style={{ fontSize: '11px', color: '#d0d6da', display: 'block' }}>{block.title}</strong>
+                        <span style={{ fontSize: '9px', color: '#84898e' }}>{block.desc}</span>
+                      </div>
+                      <Plus size={14} color="#eaaa7f" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Bezier Connecting Cables SVG */}
+            <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1 }}>
+              {nodes.slice(0, -1).map((node, idx) => {
+                const nextNode = nodes[idx + 1];
+                if (!nextNode) return null;
+                return (
+                  <path
+                    key={node.id}
+                    d={`M ${node.x + 220} ${node.y + 45} C ${node.x + 270} ${node.y + 45}, ${nextNode.x - 40} ${nextNode.y + 45}, ${nextNode.x} ${nextNode.y + 45}`}
+                    fill="none"
+                    stroke={node.accent || '#eaaa7f'}
+                    strokeWidth="2"
+                    strokeDasharray="4 2"
+                  />
+                );
+              })}
+            </svg>
+
+            {/* Stage Canvas Nodes */}
+            {nodes.map(node => {
+              const isSelected = selectedNode?.id === node.id;
+              return (
+                <div
+                  key={node.id}
+                  onMouseDown={e => handleMouseDown(e, node)}
+                  style={{
+                    position: 'absolute',
+                    left: `${node.x}px`,
+                    top: `${node.y}px`,
+                    width: '220px',
+                    background: isSelected ? '#292f33' : '#202426',
+                    borderRadius: '10px',
+                    border: '1px solid ' + (isSelected ? node.accent : '#35393b'),
+                    boxShadow: isSelected ? `0 0 20px ${node.accent}44` : '0 6px 18px #0008',
+                    zIndex: isSelected ? 15 : 5,
+                    cursor: 'grab',
+                    userSelect: 'none',
+                    padding: '12px'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span className={`badge ${node.status === 'Running' ? 'orange' : node.status === 'Completed' ? 'green' : 'neutral'}`} style={{ fontSize: '8px' }}>
+                      {node.status}
+                    </span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteNode(node.id); }}
+                      style={{ padding: '0', border: 'none', background: 'transparent', color: '#737b82', cursor: 'pointer' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <strong style={{ fontSize: '11px', color: '#e6e7e7', display: 'block', marginBottom: '6px' }}>
+                    {node.title}
+                  </strong>
+
+                  {node.device && (
+                    <div style={{ fontSize: '9px', color: '#84898e', background: '#16181a', padding: '4px 6px', borderRadius: '4px', marginBottom: '4px' }}>
+                      Device: {node.device}
+                    </div>
+                  )}
+
+                  {node.confidence && (
+                    <div style={{ fontSize: '9px', color: '#accb91', background: '#16181a', padding: '4px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                      RCA Confidence: {node.confidence}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid #303638', fontSize: '8px', color: '#737b82' }}>
+                    <span>{node.type}</span>
+                    <span>Drag to move</span>
+                  </div>
+                </div>
+              );
+            })}
+          </section>
+
+          {/* Embedded Operator Terminal Console */}
+          {terminalOpen && (
+            <section className="card" style={{ background: '#151719' }}>
+              <div className="card-heading" style={{ borderBottom: '1px solid #2b2e30', paddingBottom: '10px' }}>
+                <h2><Terminal size={15} />Kyro Operator Terminal (Puku CLI)</h2>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <span className="badge green">CLI Active</span>
+                  <button className="text-button" onClick={() => setTerminalOpen(false)}>Hide</button>
+                </div>
+              </div>
+
+              <div style={{ padding: '14px 21px', fontFamily: 'monospace', fontSize: '11px' }}>
+                <div style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '10px' }}>
+                  {termLogs.map((l, i) => (
+                    <div key={i} style={{ color: l.startsWith('kyro-cli>') ? '#efa476' : l.includes('EXECUTOR') ? '#accb91' : '#d0d6da' }}>{l}</div>
+                  ))}
+                </div>
+
+                <form onSubmit={handleTermSubmit} style={{ display: 'flex', gap: '8px' }}>
+                  <span style={{ color: '#accb91', fontWeight: 600 }}>kyro-cli&gt;</span>
+                  <input
+                    type="text"
+                    value={termInput}
+                    onChange={e => setTermInput(e.target.value)}
+                    placeholder="Type CLI command (e.g. puku execute, puku analyze INC-9042, help, clear)..."
+                    style={{ flex: 1, padding: '6px 10px', fontSize: '11px', fontFamily: 'monospace' }}
+                  />
+                  <button className="primary" style={{ padding: '6px 14px' }}>Execute</button>
+                </form>
+              </div>
+            </section>
+          )}
         </div>
-      )}
+
+        {/* Right Drawer: Puku AI Copilot Panel */}
+        {copilotOpen && (
+          <section className="card" style={{ height: 'fit-content' }}>
+            <div className="card-heading" style={{ borderBottom: '1px solid #2b2e30', paddingBottom: '12px' }}>
+              <h2><Sparkles size={15} />Puku AI Copilot</h2>
+              <button className="text-button" onClick={() => setCopilotOpen(false)}>Close</button>
+            </div>
+            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ maxHeight: '350px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {chatMessages.map((m, i) => (
+                  <div key={i} style={{ padding: '10px 12px', borderRadius: '8px', background: m.sender === 'puku' ? '#202325' : '#332a24', border: '1px solid ' + (m.sender === 'puku' ? '#35393b' : '#554032'), fontSize: '11px', color: m.sender === 'puku' ? '#d0d6da' : '#f2b287' }}>
+                    {m.text}
+                  </div>
+                ))}
+              </div>
+              <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '6px' }}>
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  placeholder="Ask Puku AI..."
+                  style={{ flex: 1, fontSize: '11px' }}
+                />
+                <button className="primary" style={{ padding: '6px 12px' }}><Send size={13} /></button>
+              </form>
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }
