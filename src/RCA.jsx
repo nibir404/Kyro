@@ -6,7 +6,7 @@ import {
   ArrowRight, Filter, Download, Share2, FileText, Database, ShieldCheck, CornerDownRight,
   Radio, BarChart2, Globe
 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, LineChart, Line } from 'recharts';
 
 const mockTelemetry = [
   { time: '14:00', loss: 0.1, latency: 1.2, cpu: 18, flow: 1400 },
@@ -169,7 +169,7 @@ export default function RCA() {
         </div>
       </div>
 
-      {/* Overview Tabs Navigation matching Kyro Design System */}
+      {/* Overview Tabs Navigation */}
       <div className="overview-tabs">
         <div>
           <button className={activeTab === 'rca' ? 'active' : ''} onClick={() => setActiveTab('rca')}>RCA & Evidence</button>
@@ -180,7 +180,7 @@ export default function RCA() {
         <span><i className="dot green-dot" /> Kafka Pipeline Active (42.8k events/s)</span>
       </div>
 
-      {/* Main Grid matching Kyro page layout */}
+      {/* Main Grid */}
       <div className="main-grid" style={{ gridTemplateColumns: copilotOpen ? 'minmax(0,1.8fr) 300px' : '1fr' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
@@ -235,30 +235,55 @@ export default function RCA() {
             </div>
           </section>
 
-          {/* RCA Evidence vs Impact vs Runbook Tabs */}
+          {/* Visual-Rich Telemetry Dashboards (Multi-Charts: Packet Loss, Latency, CPU) */}
+          {activeTab === 'rca' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <section className="card">
+                <div className="card-heading">
+                  <h2><Activity size={16} />Packet Loss % Spike (NetFlow)</h2>
+                </div>
+                <div className="chart" style={{ height: '170px', margin: '15px 16px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={mockTelemetry}>
+                      <defs>
+                        <linearGradient id="lossGrad2" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#efa476" stopOpacity={0.4} />
+                          <stop offset="100%" stopColor="#efa476" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="time" stroke="#777e80" fontSize={10} axisLine={false} tickLine={false} />
+                      <YAxis stroke="#777e80" fontSize={10} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ background: '#27292b', border: '1px solid #4b4c4e', borderRadius: '8px' }} />
+                      <Area type="monotone" dataKey="loss" stroke="#efa476" fill="url(#lossGrad2)" strokeWidth={2} name="Packet Loss (%)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+
+              <section className="card">
+                <div className="card-heading">
+                  <h2><Cpu size={16} />Router CPU & Memory Utilization</h2>
+                </div>
+                <div className="chart" style={{ height: '170px', margin: '15px 16px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={mockTelemetry}>
+                      <XAxis dataKey="time" stroke="#777e80" fontSize={10} axisLine={false} tickLine={false} />
+                      <YAxis stroke="#777e80" fontSize={10} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ background: '#27292b', border: '1px solid #4b4c4e', borderRadius: '8px' }} />
+                      <Bar dataKey="cpu" fill="#accb91" radius={[4, 4, 0, 0]} name="CPU (%)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* Evidence Cards */}
           {activeTab === 'rca' && (
             <section className="card">
               <div className="card-heading">
-                <h2><Activity size={16} />Telemetry Signal Correlation & Evidence Cards</h2>
+                <h2><ShieldCheck size={16} />Evidence Hypotheses (Observed vs Inferred)</h2>
               </div>
-              <div className="chart" style={{ height: '180px', margin: '15px 21px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={mockTelemetry}>
-                    <defs>
-                      <linearGradient id="rcaLossArea" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#efa476" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#efa476" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="time" stroke="#777e80" fontSize={10} axisLine={false} tickLine={false} />
-                    <YAxis stroke="#777e80" fontSize={10} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{ background: '#27292b', border: '1px solid #4b4c4e', borderRadius: '8px' }} />
-                    <Area type="monotone" dataKey="loss" stroke="#efa476" fill="url(#rcaLossArea)" strokeWidth={2} name="Packet Loss (%)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Evidence Log List */}
               <div style={{ padding: '0 21px 21px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {selectedIncident.hypotheses.map((h, idx) => (
                   <div key={idx} style={{ padding: '12px 16px', background: '#202325', border: '1px solid #35393b', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -357,7 +382,7 @@ export default function RCA() {
             </section>
           )}
 
-          {/* Embedded CLI Terminal Bar matching Kyro styling */}
+          {/* Embedded CLI Terminal Bar */}
           {cliOpen && (
             <section className="card" style={{ background: '#151719' }}>
               <div className="card-heading" style={{ borderBottom: '1px solid #2b2e30', paddingBottom: '12px' }}>
